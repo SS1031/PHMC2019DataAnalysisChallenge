@@ -26,13 +26,19 @@ tst_regime.columns = [f'Regime{c}' for c in tst_regime.columns]
 tst_base = pd.concat([tst_base, tst_regime], axis=1)
 tst_base = tst_base.drop(columns=['FlightRegime'])
 
+base_fc_parameter = EfficientFCParameters()
+CONST.FEATDIR001 = CONST.FEATDIR001.format(base_fc_parameter.__class__.__name__)
+
+if not os.path.exists(CONST.FEATDIR001):
+    os.makedirs(CONST.FEATDIR001)
+
 
 def extract_tsfresh_features(output_path=os.path.join(CONST.FEATDIR001, 'all_tsfeature.f')):
     if os.path.exists(output_path):
         return output_path
 
     dataset = pd.DataFrame()
-    t_no_list = [50, 100, 150, 200, 250, 300]
+    t_no_list = [50, 150, 250]
     for t_no in t_no_list:
         print('Flight NO', t_no)
         t_engine = trn_base.groupby('Engine').size().index[
@@ -41,7 +47,7 @@ def extract_tsfresh_features(output_path=os.path.join(CONST.FEATDIR001, 'all_tsf
 
         tmp = trn_base[(trn_base.FlightNo <= t_no) & trn_base.Engine.isin(t_engine)]
         extracted_features = extract_features(tmp, column_id="Engine", column_sort="FlightNo",
-                                              default_fc_parameters=MinimalFCParameters())
+                                              default_fc_parameters=base_fc_parameter)
         extracted_features['CurrentFlightNo'] = t_no
 
         tmp_dataset = pd.concat([
@@ -146,19 +152,19 @@ def feature_to_fc_settting_dict(input_path, output_path=os.path.join(CONST.FEATD
     features = [c for c in dataset.columns if c not in CONST.EX_COLS]
     fc_dict = tsfresh.feature_extraction.settings.from_columns(dataset[features])
 
-    with open(output_path, 'w') as f:
-        json.dump(fc_dict, f)
+    # with open(output_path, 'w') as f:
+    #     json.dump(fc_dict, f)
 
-    return output_path
+    return fc_dict
 
 
-def create_dataset(input_path, trn_output_path=os.path.join(CONST.FEATDIR001, 'trn_dataset.f'),
+def create_dataset(fc_setting, trn_output_path=os.path.join(CONST.FEATDIR001, 'trn_dataset.f'),
                    tst_output_path=os.path.join(CONST.FEATDIR001, 'tst_dataset.f')):
     if os.path.exists(trn_output_path) and os.path.exists(tst_output_path):
         return trn_output_path, tst_output_path
 
-    with open(input_path, 'r') as f:
-        fc_setting = json.load(f)
+    # with open(input_path, 'r') as f:
+    #     fc_setting = json.load(f)
 
     trn_dataset = pd.DataFrame()
     t_no_list = list(range(20, 350, 5))
@@ -209,8 +215,8 @@ def _001_pipeline():
     dataset_path = extract_tsfresh_features()
     dataset_path = drop_zero_stddev_features(dataset_path)
     dataset_path = feature_selection_by_lgbm(dataset_path)
-    fc_setting_path = feature_to_fc_settting_dict(dataset_path)
-    trn_dataset_path, tst_dataset_path = create_dataset(fc_setting_path)
+    fc_dict = feature_to_fc_settting_dict(dataset_path)
+    trn_dataset_path, tst_dataset_path = create_dataset(fc_dict)
 
     return trn_dataset_path, tst_dataset_path
 
