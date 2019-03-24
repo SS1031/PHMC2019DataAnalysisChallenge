@@ -2,6 +2,8 @@ import os
 import pandas as pd
 import CONST
 import lightgbm as lgb
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 trn_base = pd.read_csv(os.path.join(CONST.INDIR, 'concatenated_train.csv'))
 tst_base = pd.read_csv(os.path.join(CONST.INDIR, 'concatenated_test.csv'))
@@ -36,10 +38,9 @@ agg_dict = {}
 for f in feat_cols:
     agg_dict[f] = ['mean', 'median', 'min', 'max', 'sum', 'std',
                    'var', 'sem', 'mad', 'skew', 'prod', pd.DataFrame.kurt]
-    # agg_dict[f] = ['mean']
 
 trn_dataset = pd.DataFrame()
-t_no_list = tst_base.groupby('Engine').FlightNo.max().values
+t_no_list = list(set(tst_base.groupby('Engine').FlightNo.max().values))
 from tqdm import tqdm
 
 for t_no in tqdm(t_no_list):
@@ -72,13 +73,14 @@ seed = 777
 gsp = GroupShuffleSplit(n_splits=8, random_state=seed)
 gsp.split(X=trn_dataset, groups=trn_dataset.EncodedEngine)
 
+feature_importance_df = pd.DataFrame()
 for ix, (train_index, valid_index) in enumerate(gsp.split(X=trn_dataset, groups=trn_dataset.EncodedEngine)):
     seed = seed * ix
     X_train, y_train = trn_dataset.loc[train_index, features], trn_dataset.loc[train_index, 'RUL']
     X_valid, y_valid = trn_dataset.loc[valid_index, features], trn_dataset.loc[valid_index, 'RUL']
 
-    d_train = lgb.Dataset(X_train, label=y_train)
-    d_valid = lgb.Dataset(X_valid, label=y_valid)
+    d_train = lgb.Dataset(X_train, label=y_train, feature_name=features)
+    d_valid = lgb.Dataset(X_valid, label=y_valid, feature_name=features)
 
     params = {
         "boosting_type": "gbdt",
@@ -107,6 +109,26 @@ for ix, (train_index, valid_index) in enumerate(gsp.split(X=trn_dataset, groups=
     print(eval_results['valid']['l1'][model.best_iteration - 1])
     preds[f'fold{ix + 1}'] = model.predict(tst_dataset[features])
 
+    fold_importance_df = pd.DataFrame()
+    fold_importance_df["feature"] = features
+    fold_importance_df["importance"] = model.feature_importance()
+    fold_importance_df["fold"] = ix
+    feature_importance_df = pd.concat([feature_importance_df, fold_importance_df], axis=0)
+
 preds['Predicted RUL'] = preds[[c for c in preds.columns if 'fold' in c]].mean(axis=1)
 preds['Predicted Total Life'] = preds['Predicted RUL'] + preds['CurrentFlightNo']
 preds[['Predicted RUL']].to_csv(os.path.join(CONST.OUTDIR, 'baseline.csv'), index=False)
+
+cols = (feature_importance_df[
+            ["feature", "importance"]
+        ].groupby("feature").mean().sort_values(by="importance",
+                                                ascending=False)[:100].index)
+best_features = feature_importance_df.loc[feature_importance_df.feature.isin(cols)]
+plt.figure(figsize=(14, 25))
+sns.barplot(x="importance",
+            y="feature",
+            data=best_features.sort_values(by="importance",
+                                           ascending=False))
+plt.title('LightGBM Features (avg over folds)')
+plt.tight_layout()
+plt.savefig(os.path.join(CONST.OUTDIR, f'imp_baseline.png'))
