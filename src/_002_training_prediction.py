@@ -4,7 +4,7 @@ import numpy as np
 
 import lightgbm as lgb
 from sklearn.model_selection import GroupShuffleSplit
-from _001_feature_extraction_selection import _001_pipeline
+from _001_feature import _001_feature
 from sklearn import preprocessing
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -88,7 +88,7 @@ def n_fold_cv(trn, params, tst=None, folds=8, seed=777):
 
 
 if __name__ == '__main__':
-    trn_dataset_path, tst_dataset_path = _001_pipeline()
+    trn_dataset_path, tst_dataset_path = _001_feature()
 
     trn_dataset = pd.read_feather(trn_dataset_path)
     tst_dataset = pd.read_feather(tst_dataset_path)

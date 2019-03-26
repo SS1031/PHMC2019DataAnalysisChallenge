@@ -1,6 +1,6 @@
 import os
+import json
 import pandas as pd
-import CONST
 import lightgbm as lgb
 from sklearn.model_selection import GroupShuffleSplit
 from tsfresh import extract_features
@@ -9,33 +9,23 @@ from tsfresh.feature_extraction import ComprehensiveFCParameters
 from tsfresh.feature_extraction import EfficientFCParameters
 from tsfresh.feature_extraction import MinimalFCParameters
 import tsfresh
-import json
-
 from sklearn import preprocessing
 
-trn_base = pd.read_csv(os.path.join(CONST.INDIR, 'trn_base.csv'))
-tst_base = pd.read_csv(os.path.join(CONST.INDIR, 'tst_base.csv'))
+import CONST
+from _000_preprocess import _000_preprocess
 
-trn_regime = pd.get_dummies(trn_base['FlightRegime'])
-trn_regime.columns = [f'Regime{c}' for c in trn_regime.columns]
-trn_base = pd.concat([trn_base, trn_regime], axis=1)
-trn_base = trn_base.drop(columns=['FlightRegime'])
-
-tst_regime = pd.get_dummies(tst_base['FlightRegime'])
-tst_regime.columns = [f'Regime{c}' for c in tst_regime.columns]
-tst_base = pd.concat([tst_base, tst_regime], axis=1)
-tst_base = tst_base.drop(columns=['FlightRegime'])
-
-base_fc_parameter = EfficientFCParameters()
-CONST.FEATDIR001 = CONST.FEATDIR001.format(base_fc_parameter.__class__.__name__)
-
-if not os.path.exists(CONST.FEATDIR001):
-    os.makedirs(CONST.FEATDIR001)
+base_fc_parameter = MinimalFCParameters()
+CONST.PIPE001 = CONST.PIPE001.format(base_fc_parameter.__class__.__name__)
+if not os.path.exists(CONST.PIPE001):
+    os.makedirs(CONST.PIPE001)
 
 
-def extract_tsfresh_features(output_path=os.path.join(CONST.FEATDIR001, 'all_tsfeature.f')):
+def extract_tsfresh_features(trn_path,
+                             output_path=os.path.join(CONST.PIPE001, 'all_tsfeature.f')):
     if os.path.exists(output_path):
         return output_path
+
+    trn_base = pd.read_csv(trn_path)
 
     dataset = pd.DataFrame()
     t_no_list = [50, 150, 250]
@@ -52,7 +42,8 @@ def extract_tsfresh_features(output_path=os.path.join(CONST.FEATDIR001, 'all_tsf
 
         tmp_dataset = pd.concat([
             extracted_features,
-            trn_base[trn_base.Engine.isin(t_engine)].groupby(['Engine']).FlightNo.max().to_frame('RUL') - t_no
+            trn_base[trn_base.Engine.isin(t_engine)].groupby(['Engine']).FlightNo.max().to_frame(
+                'RUL') - t_no
         ], axis=1).reset_index().rename(columns={'index': 'Engine'})
 
         dataset = pd.concat([dataset, tmp_dataset], axis=0).reset_index(drop=True)
@@ -62,7 +53,8 @@ def extract_tsfresh_features(output_path=os.path.join(CONST.FEATDIR001, 'all_tsf
     return output_path
 
 
-def drop_zero_stddev_features(input_path, output_path=os.path.join(CONST.FEATDIR001, 'drop_zero_std_tsfeaure.f')):
+def drop_zero_stddev_features(input_path, output_path=os.path.join(CONST.PIPE001,
+                                                                   'drop_zero_std_tsfeaure.f')):
     if os.path.exists(output_path):
         return output_path
 
@@ -79,7 +71,8 @@ def drop_zero_stddev_features(input_path, output_path=os.path.join(CONST.FEATDIR
     return output_path
 
 
-def feature_selection_by_lgbm(input_path, output_path=os.path.join(CONST.FEATDIR001, 'lgb_selected_tsfeature.f')):
+def feature_selection_by_lgbm(input_path, output_path=os.path.join(CONST.PIPE001,
+                                                                   'lgb_selected_tsfeature.f')):
     if os.path.exists(output_path):
         return output_path
     seed = 777
@@ -91,7 +84,8 @@ def feature_selection_by_lgbm(input_path, output_path=os.path.join(CONST.FEATDIR
 
     features = [c for c in dataset.columns if c not in CONST.EX_COLS]
     feature_importance_df = pd.DataFrame()
-    for ix, (train_index, valid_index) in enumerate(gsp.split(X=dataset, groups=dataset.EncodedEngine)):
+    for ix, (train_index, valid_index) in enumerate(gsp.split(X=dataset,
+                                                              groups=dataset.EncodedEngine)):
         print("Fold", ix + 1)
         seed = seed * ix
         X_train, y_train = dataset.loc[train_index, features], dataset.loc[train_index, 'RUL']
@@ -144,27 +138,21 @@ def feature_selection_by_lgbm(input_path, output_path=os.path.join(CONST.FEATDIR
     return output_path
 
 
-def feature_to_fc_settting_dict(input_path, output_path=os.path.join(CONST.FEATDIR001, 'lgb_selected_setting.json')):
-    # if os.path.exists(output_path):
-    #     return output_path
-
+def feature_to_fc_settting_dict(input_path):
     dataset = pd.read_feather(input_path)
     features = [c for c in dataset.columns if c not in CONST.EX_COLS]
     fc_dict = tsfresh.feature_extraction.settings.from_columns(dataset[features])
-
-    # with open(output_path, 'w') as f:
-    #     json.dump(fc_dict, f)
-
     return fc_dict
 
 
-def create_dataset(fc_setting, trn_output_path=os.path.join(CONST.FEATDIR001, 'trn_dataset.f'),
-                   tst_output_path=os.path.join(CONST.FEATDIR001, 'tst_dataset.f')):
+def create_dataset(trn_base_path, tst_base_path, fc_setting,
+                   trn_output_path=os.path.join(CONST.PIPE001, 'trn_dataset.f'),
+                   tst_output_path=os.path.join(CONST.PIPE001, 'tst_dataset.f')):
     if os.path.exists(trn_output_path) and os.path.exists(tst_output_path):
         return trn_output_path, tst_output_path
 
-    # with open(input_path, 'r') as f:
-    #     fc_setting = json.load(f)
+    trn_base = pd.read_csv(trn_base_path)
+    tst_base = pd.read_csv(tst_base_path)
 
     trn_dataset = pd.DataFrame()
     t_no_list = list(range(20, 350, 5))
@@ -178,14 +166,16 @@ def create_dataset(fc_setting, trn_output_path=os.path.join(CONST.FEATDIR001, 't
         extracted_features = extract_features(tmp,
                                               column_id="Engine",
                                               column_sort="FlightNo",
-                                              default_fc_parameters={},  # これ空の辞書を入れないとdefault特徴量も作られる
+                                              default_fc_parameters={},
+                                              # これ空の辞書を入れないとdefault特徴量も作られる
                                               kind_to_fc_parameters=fc_setting)
 
         extracted_features['CurrentFlightNo'] = t_no
 
         tmp_dataset = pd.concat([
             extracted_features,
-            trn_base[trn_base.Engine.isin(t_engine)].groupby(['Engine']).FlightNo.max().to_frame('RUL') - t_no
+            trn_base[trn_base.Engine.isin(t_engine)].groupby(['Engine']).FlightNo.max().to_frame(
+                'RUL') - t_no
         ], axis=1).reset_index().rename(
             columns={'index': 'Engine'}
         )
@@ -196,7 +186,8 @@ def create_dataset(fc_setting, trn_output_path=os.path.join(CONST.FEATDIR001, 't
                                    default_fc_parameters={}, kind_to_fc_parameters=fc_setting)
     tst_dataset = pd.concat([
         tst_dataset,
-        tst_base.groupby('Engine').FlightNo.max().to_frame('CurrentFlightNo')], axis=1).reset_index().rename(
+        tst_base.groupby('Engine').FlightNo.max().to_frame('CurrentFlightNo')],
+        axis=1).reset_index().rename(
         columns={'index': 'Engine'}
     )
 
@@ -211,15 +202,18 @@ def create_dataset(fc_setting, trn_output_path=os.path.join(CONST.FEATDIR001, 't
     return trn_output_path, tst_output_path
 
 
-def _001_pipeline():
-    dataset_path = extract_tsfresh_features()
-    dataset_path = drop_zero_stddev_features(dataset_path)
-    dataset_path = feature_selection_by_lgbm(dataset_path)
-    fc_dict = feature_to_fc_settting_dict(dataset_path)
-    trn_dataset_path, tst_dataset_path = create_dataset(fc_dict)
+def _001_feature():
+    trn_base_path, tst_base_path = _000_preprocess()
+
+    _path = extract_tsfresh_features(trn_base_path)
+    _path = drop_zero_stddev_features(_path)
+    _path = feature_selection_by_lgbm(_path)
+    fc_dict = feature_to_fc_settting_dict(_path)
+
+    trn_dataset_path, tst_dataset_path = create_dataset(trn_base_path, tst_base_path, fc_dict)
 
     return trn_dataset_path, tst_dataset_path
 
 
 if __name__ == '__main__':
-    trn_dataset_path, tst_dataset_path = _001_pipeline()
+    trn_dataset_path, tst_dataset_path = _001_feature()
