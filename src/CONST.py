@@ -51,8 +51,5 @@ if not os.path.exists(INTSTDIR):
 # For submit samples
 if not os.path.exists(os.path.join(INDIR, 'submit_sample.csv')):
     ss_url = "https://industrial-big-data.io/wp-content/themes/fcvanilla/DLdate/csv.php"
-    proxy = urllib.request.ProxyHandler({'https': 'http://autoproxy.kmt.kmtg.net:8080'})
-    opener = urllib.request.build_opener(proxy)
-    urllib.request.install_opener(opener)
     url_submit_sample = "https://industrial-big-data.io/wp-content/themes/fcvanilla/DLdate/Test%20Files.zip"
     urllib.request.urlretrieve(url_submit_sample, os.path.join(INDIR, 'submit_sample.csv'))

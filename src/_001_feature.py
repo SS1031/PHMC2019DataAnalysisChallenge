@@ -187,9 +187,26 @@ def create_dataset(trn_base_path, tst_base_path, fc_setting,
     tst_dataset = pd.concat([
         tst_dataset,
         tst_base.groupby('Engine').FlightNo.max().to_frame('CurrentFlightNo')],
-        axis=1).reset_index().rename(
-        columns={'index': 'Engine'}
+        axis=1
     )
+
+    # TEST DATA Augmentation
+    t_no_list = list(range(20, 200, 5))
+    for t_no in t_no_list:
+        print('Flight NO', t_no)
+        t_engine = tst_base.groupby('Engine').size().index[tst_base.groupby('Engine').FlightNo.max() >= t_no].values
+        tmp = tst_base[(tst_base.FlightNo <= t_no) & tst_base.Engine.isin(t_engine)]
+        extracted_features = extract_features(tmp,
+                                              column_id="Engine",
+                                              column_sort="FlightNo",
+                                              default_fc_parameters={},
+                                              # これ空の辞書を入れないとdefault特徴量も作られる
+                                              kind_to_fc_parameters=fc_setting)
+        extracted_features['CurrentFlightNo'] = t_no
+        tst_dataset = pd.concat([tst_dataset, extracted_features], axis=0)
+    tst_dataset = tst_dataset.reset_index().rename(columns={'index': 'Engine'})
+
+    # TODO 2019-03-26 : AverageWeightを導入したい，とりあえずなしでやってみるか
 
     print(trn_dataset.shape)
     print(tst_dataset.shape)
