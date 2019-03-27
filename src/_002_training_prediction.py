@@ -13,14 +13,16 @@ import optuna
 from sklearn.metrics import mean_absolute_error
 
 
-def n_fold_cv(trn, params, tst=None, folds=8, seed=777):
+def n_fold_cv(trn, params, tst=None, folds=8, seed=42):
     """
     tstが入っていたらpredictionとimportanceを返却する
     """
 
     if tst is not None:
         preds = pd.DataFrame({'Engine': tst.Engine,
-                              'CurrentFlightNo': tst.CurrentFlightNo},
+                              'CurrentFlightNo': tst.CurrentFlightNo,
+                              'Weight': tst.Weight,
+                              'DiffFlightNo': tst.DiffFlightNo},
                              index=tst.index)
         feature_importance_df = pd.DataFrame()
 
@@ -63,8 +65,13 @@ def n_fold_cv(trn, params, tst=None, folds=8, seed=777):
             feature_importance_df = pd.concat([feature_importance_df, fold_importance_df], axis=0)
 
     if tst is not None:
-        preds['Predicted RUL'] = preds[[c for c in preds.columns if 'fold' in c]].mean(axis=1)
-        preds['Predicted Total Life'] = preds['Predicted RUL'] + preds['CurrentFlightNo']
+        # pred_rul = \
+        #     preds[['Engine'] + [c for c in preds.columns if 'fold' in c]].groupby('Engine').mean()
+        #
+        # pred_rul_sum_rul_weight = preds[
+        #     ['Engine', 'Weight'] + [c for c in preds.columns if 'fold' in c]].groupby('Engine').sum()
+
+        # preds['Predicted Total Life'] = preds['Predicted RUL'] + preds['CurrentFlightNo']
 
         cols = (feature_importance_df[
                     ["feature", "importance"]
@@ -84,7 +91,7 @@ def n_fold_cv(trn, params, tst=None, folds=8, seed=777):
         valid_preds.dropna(inplace=True)
         return mean_absolute_error(valid_preds.actual_RUL, valid_preds.preds)
     else:
-        return preds[['Engine', 'Predicted RUL', 'Predicted Total Life']]
+        return preds
 
 
 if __name__ == '__main__':
@@ -104,30 +111,29 @@ if __name__ == '__main__':
         'max_bin': 369,
         'bagging_fraction': 0.9827855407461733,
         'lambda_l1': 0.06653735048996762,
-        "bagging_seed": 777,
-        "feature_fraction_seed": 777,
-        "seed": 777,
+        "bagging_seed": 42,
+        "feature_fraction_seed": 42,
+        "seed": 42,
     }
 
-    #
-    # class Objective(object):
-    #     def __init__(self, trn, tst):
-    #         self.trn = trn
-    #
-    #     def __call__(self, trial):
-    #         trn = self.trn
-    #
-    #         params['num_leaves'] = trial.suggest_int('num_leaves', 10, 100)
-    #         params['min_data_in_leaf'] = trial.suggest_int('min_data_in_leaf', 10, 50)
-    #         params['max_bin'] = trial.suggest_int('max_bin', 64, 512)
-    #         params['bagging_fraction'] = trial.suggest_uniform('bagging_fraction', 0.7, 1.0)
-    #         params['lambda_l1'] = trial.suggest_uniform('lambda_l1', .0, .1)
-    #         # params['lambda_l2'] = trial.suggest_uniform('lambda_l2', .0, .1)
-    #         params['verbose'] = -1
-    #
-    #         return n_fold_cv(trn, params, folds=6)
-    #
-    #
+
+    class Objective(object):
+        def __init__(self, trn, tst):
+            self.trn = trn
+
+        def __call__(self, trial):
+            trn = self.trn
+            params['num_leaves'] = trial.suggest_int('num_leaves', 10, 150)
+            params['min_data_in_leaf'] = trial.suggest_int('min_data_in_leaf', 10, 100)
+            params['max_bin'] = trial.suggest_int('max_bin', 32, 512)
+            params['bagging_fraction'] = trial.suggest_uniform('bagging_fraction', 0.7, 1.0)
+            params['lambda_l1'] = trial.suggest_uniform('lambda_l1', .0, .1)
+            # params['lambda_l2'] = trial.suggest_uniform('lambda_l2', .0, .1)
+            params['verbose'] = -1
+
+            return n_fold_cv(trn, params, folds=6)
+
+
     # objective = Objective(trn_dataset, tst_dataset)
     # study = optuna.create_study()
     # study.optimize(objective, n_trials=10)
@@ -137,4 +143,9 @@ if __name__ == '__main__':
     # params['bagging_fraction'] = study.best_params['bagging_fraction']
     # params['learning_rate'] = 0.01
     preds = n_fold_cv(trn_dataset, params, tst_dataset)
-    preds[['Predicted RUL']].to_csv(os.path.join(CONST.OUTDIR, 'sbmt_24_03_2019.csv'), index=False)
+    # preds[['Predicted RUL']].to_csv(os.path.join(CONST.OUTDIR, 'sbmt_24_03_2019.csv'), index=False)
+    for c in preds.columns:
+        if 'fold' in c:
+            preds['Diff' + c] = preds[c] - preds.DiffFlightNo
+
+    # print(sum_pred_rul_weight)

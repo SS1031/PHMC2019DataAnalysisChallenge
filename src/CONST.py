@@ -12,9 +12,9 @@ PIPE000 = os.path.join(OUTDIR, '_000')
 PIPE001 = os.path.join(OUTDIR, '_001_{}')
 PIPE002 = os.path.join(OUTDIR, '_002')
 PIPE003 = os.path.join(OUTDIR, '_003')
-EX_COLS = ['Engine', 'RUL', 'EncodedEngine']
+EX_COLS = ['Engine', 'RUL', 'EncodedEngine', 'Weight', 'DiffFlightNo']
 
-for _dir in [INDIR, OUTDIR, PIPE000, PIPE002, PIPE003]:
+for _dir in [INDIR, OUTDIR, IMPDIR, PIPE000, PIPE002, PIPE003]:
     if not os.path.exists(_dir):
         os.makedirs(_dir)
 

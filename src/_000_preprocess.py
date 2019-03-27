@@ -26,7 +26,10 @@ def base_setup(kind='trn'):
     for f in files:
         _df = pd.read_csv(os.path.join(dir_path, f), encoding='shift-jis',
                           usecols=list(range(0, 25)))
-        _df['Engine'] = 'Train' + f.split('.')[0].split('_')[2]
+        if kind == 'trn':
+            _df['Engine'] = 'Train' + f.split('.')[0].split('_')[2]
+        else:
+            _df['Engine'] = 'Test' + f.split('.')[0].split('_')[2]
         _df['Flight No'] = _df.index.values + 1
         df = pd.concat([df, _df], axis=0).reset_index(drop=True)
 

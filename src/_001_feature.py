@@ -189,12 +189,19 @@ def create_dataset(trn_base_path, tst_base_path, fc_setting,
         tst_base.groupby('Engine').FlightNo.max().to_frame('CurrentFlightNo')],
         axis=1
     )
+    # TTA的な加重平均のためのweight, weight = CurrentFlightNo / MaxFlightNo
+    tst_dataset['Weight'] = 1
+    # TTA用のDiffFlightNo
+    tst_dataset['DiffFlightNo'] = (
+            tst_base.groupby('Engine').FlightNo.max() - tst_dataset['CurrentFlightNo']
+    )
 
     # TEST DATA Augmentation
     t_no_list = list(range(20, 200, 5))
     for t_no in t_no_list:
         print('Flight NO', t_no)
-        t_engine = tst_base.groupby('Engine').size().index[tst_base.groupby('Engine').FlightNo.max() >= t_no].values
+        t_engine = tst_base.groupby('Engine').size().index[
+            tst_base.groupby('Engine').FlightNo.max() >= t_no].values
         tmp = tst_base[(tst_base.FlightNo <= t_no) & tst_base.Engine.isin(t_engine)]
         extracted_features = extract_features(tmp,
                                               column_id="Engine",
@@ -203,13 +210,20 @@ def create_dataset(trn_base_path, tst_base_path, fc_setting,
                                               # これ空の辞書を入れないとdefault特徴量も作られる
                                               kind_to_fc_parameters=fc_setting)
         extracted_features['CurrentFlightNo'] = t_no
+        # 加重平均計算のためのWeight
+        extracted_features['Weight'] = t_no / tst_base.groupby('Engine').FlightNo.max()
+        # TTA用のDiffFlightNo
+        extracted_features['DiffFlightNo'] = (
+                tst_base.groupby('Engine').FlightNo.max() - t_no
+        )
         tst_dataset = pd.concat([tst_dataset, extracted_features], axis=0)
+
     tst_dataset = tst_dataset.reset_index().rename(columns={'index': 'Engine'})
 
-    # TODO 2019-03-26 : AverageWeightを導入したい，とりあえずなしでやってみるか
+    # TODO 2019-03-26 : 加重平均のためのWeightを導入したい
 
-    print(trn_dataset.shape)
-    print(tst_dataset.shape)
+    print("Train dataset size =", trn_dataset.shape)
+    print("Test dataset size =", tst_dataset.shape)
     assert (set([c for c in trn_dataset.columns if c not in CONST.EX_COLS]) ==
             set([c for c in tst_dataset.columns if c not in CONST.EX_COLS]))
 
