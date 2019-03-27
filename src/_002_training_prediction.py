@@ -134,18 +134,22 @@ if __name__ == '__main__':
             return n_fold_cv(trn, params, folds=6)
 
 
-    # objective = Objective(trn_dataset, tst_dataset)
-    # study = optuna.create_study()
-    # study.optimize(objective, n_trials=10)
-    # params['num_leaves'] = study.best_params['num_leaves']
-    # params['min_data_in_leaf'] = study.best_params['min_data_in_leaf']
-    # params['max_bin'] = study.best_params['max_bin']
-    # params['bagging_fraction'] = study.best_params['bagging_fraction']
-    # params['learning_rate'] = 0.01
-    preds = n_fold_cv(trn_dataset, params, tst_dataset)
-    # preds[['Predicted RUL']].to_csv(os.path.join(CONST.OUTDIR, 'sbmt_24_03_2019.csv'), index=False)
-    for c in preds.columns:
-        if 'fold' in c:
-            preds['Diff' + c] = preds[c] - preds.DiffFlightNo
+    objective = Objective(trn_dataset, tst_dataset)
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=10)
+    params['num_leaves'] = study.best_params['num_leaves']
+    params['min_data_in_leaf'] = study.best_params['min_data_in_leaf']
+    params['max_bin'] = study.best_params['max_bin']
+    params['bagging_fraction'] = study.best_params['bagging_fraction']
+    params['lambda_l1'] = study.best_params['lambda_l1']
+    params['learning_rate'] = 0.005
 
-    # print(sum_pred_rul_weight)
+    preds = n_fold_cv(trn_dataset, params, tst_dataset)
+    # TODO 2019-03-27: とりあえずweight=1だけで提出する
+    weightone_preds = preds[preds.Weight == 1]
+    sbmt = weightone_preds.groupby('Engine')[
+        [c for c in preds.columns if 'fold' in c]
+    ].mean().mean(axis=1).to_frame('Predicted RUL').reset_index()
+    assert_engine = np.array(['Test' + str(i).zfill(3) for i in range(1, 101)]).astype(object)
+    assert (sbmt['Engine'].values == assert_engine).all()
+    preds[['Predicted RUL']].to_csv(os.path.join(CONST.OUTDIR, 'sbmt_2019_03-27.csv'), index=False)
