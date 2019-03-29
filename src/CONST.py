@@ -9,12 +9,12 @@ INTSTDIR = '../data/input/test'
 OUTDIR = '../data/output'
 IMPDIR = os.path.join(OUTDIR, 'imp')
 PIPE000 = os.path.join(OUTDIR, '_000')
-PIPE001 = os.path.join(OUTDIR, '_001_{}')
-PIPE002 = os.path.join(OUTDIR, '_002')
-PIPE003 = os.path.join(OUTDIR, '_003')
+PIPE100 = os.path.join(OUTDIR, '_100_{}')
+PIPE200 = os.path.join(OUTDIR, '_200_{}')
+PIPE300 = os.path.join(OUTDIR, '_300')
 EX_COLS = ['Engine', 'RUL', 'EncodedEngine', 'Weight', 'DiffFlightNo']
 
-for _dir in [INDIR, OUTDIR, IMPDIR, PIPE000, PIPE002, PIPE003]:
+for _dir in [INDIR, OUTDIR, IMPDIR, PIPE000, PIPE200, PIPE300]:
     if not os.path.exists(_dir):
         os.makedirs(_dir)
 

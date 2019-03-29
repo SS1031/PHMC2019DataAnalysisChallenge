@@ -1,0 +1,5 @@
+{
+  "seed": 42,
+  "_001_feature": "minimal",
+  "_002_selection": ["drop_zero_variance", "top100_lgb"]
+}

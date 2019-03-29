@@ -33,7 +33,7 @@ def base_setup(kind='trn'):
         _df['Flight No'] = _df.index.values + 1
         df = pd.concat([df, _df], axis=0).reset_index(drop=True)
 
-    df.columns = ["".join(regex.sub('', c.title()).split(' ')) for c in df.columns]
+    df.columns = ["".join(regex.sub('', c.title()).split(' ')).strip() for c in df.columns]
 
     df_regime = pd.get_dummies(df['FlightRegime'])
     df_regime.columns = [f'Regime{c}' for c in df_regime.columns]

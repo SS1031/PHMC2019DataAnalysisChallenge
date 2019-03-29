@@ -1,5 +1,6 @@
 import os
 import json
+import numpy as np
 import pandas as pd
 import lightgbm as lgb
 from sklearn.model_selection import GroupShuffleSplit
@@ -13,22 +14,31 @@ from sklearn import preprocessing
 
 import CONST
 from _000_preprocess import _000_preprocess
+from utils import get_config
 
-base_fc_parameter = MinimalFCParameters()
-CONST.PIPE001 = CONST.PIPE001.format(base_fc_parameter.__class__.__name__)
-if not os.path.exists(CONST.PIPE001):
-    os.makedirs(CONST.PIPE001)
+mapper = {
+    "comprehensive": ComprehensiveFCParameters,
+    "efficient": EfficientFCParameters,
+    "minimal": MinimalFCParameters,
+}
+
+base_fc_parameter = mapper[get_config()['_001_feature']]()
+
+CONST.PIPE100 = CONST.PIPE100.format(base_fc_parameter.__class__.__name__)
+if not os.path.exists(CONST.PIPE100):
+    os.makedirs(CONST.PIPE100)
 
 
 def extract_tsfresh_features(trn_path,
-                             output_path=os.path.join(CONST.PIPE001, 'all_tsfeature.f')):
+                             output_path=os.path.join(CONST.PIPE100, 'all_tsfeature.f')):
     if os.path.exists(output_path):
         return output_path
 
     trn_base = pd.read_csv(trn_path)
+    print(trn_base.info())
 
     dataset = pd.DataFrame()
-    t_no_list = [50, 150, 250]
+    t_no_list = np.arange(50, 300, 30)
     for t_no in t_no_list:
         print('Flight NO', t_no)
         t_engine = trn_base.groupby('Engine').size().index[
@@ -53,7 +63,7 @@ def extract_tsfresh_features(trn_path,
     return output_path
 
 
-def drop_zero_stddev_features(input_path, output_path=os.path.join(CONST.PIPE001,
+def drop_zero_stddev_features(input_path, output_path=os.path.join(CONST.PIPE100,
                                                                    'drop_zero_std_tsfeaure.f')):
     if os.path.exists(output_path):
         return output_path
@@ -71,7 +81,7 @@ def drop_zero_stddev_features(input_path, output_path=os.path.join(CONST.PIPE001
     return output_path
 
 
-def feature_selection_by_lgbm(input_path, output_path=os.path.join(CONST.PIPE001,
+def feature_selection_by_lgbm(input_path, output_path=os.path.join(CONST.PIPE100,
                                                                    'lgb_selected_tsfeature.f')):
     if os.path.exists(output_path):
         return output_path
@@ -146,8 +156,8 @@ def feature_to_fc_settting_dict(input_path):
 
 
 def create_dataset(trn_base_path, tst_base_path, fc_setting,
-                   trn_output_path=os.path.join(CONST.PIPE001, 'trn_dataset.f'),
-                   tst_output_path=os.path.join(CONST.PIPE001, 'tst_dataset.f')):
+                   trn_output_path=os.path.join(CONST.PIPE100, 'trn_dataset.f'),
+                   tst_output_path=os.path.join(CONST.PIPE100, 'tst_dataset.f')):
     if os.path.exists(trn_output_path) and os.path.exists(tst_output_path):
         return trn_output_path, tst_output_path
 
@@ -155,7 +165,7 @@ def create_dataset(trn_base_path, tst_base_path, fc_setting,
     tst_base = pd.read_csv(tst_base_path)
 
     trn_dataset = pd.DataFrame()
-    t_no_list = list(range(20, 350, 5))
+    t_no_list = list(range(30, 350, 10))
     for t_no in t_no_list:
         print('Flight NO', t_no)
         t_engine = trn_base.groupby('Engine').size().index[
@@ -233,7 +243,7 @@ def create_dataset(trn_base_path, tst_base_path, fc_setting,
     return trn_output_path, tst_output_path
 
 
-def _001_feature():
+def _100_feature():
     trn_base_path, tst_base_path = _000_preprocess()
 
     _path = extract_tsfresh_features(trn_base_path)
@@ -247,4 +257,4 @@ def _001_feature():
 
 
 if __name__ == '__main__':
-    trn_dataset_path, tst_dataset_path = _001_feature()
+    trn_dataset_path, tst_dataset_path = _100_feature()
