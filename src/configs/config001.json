@@ -1,5 +1,6 @@
 {
+  "debug": true,
   "seed": 42,
-  "_001_feature": "minimal",
-  "_002_selection": ["drop_zero_variance", "top100_lgb"]
+  "_100_feature": "minimal",
+  "_200_selection": ["drop_zero_variance", "lgb_top_100"]
 }

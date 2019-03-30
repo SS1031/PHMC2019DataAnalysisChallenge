@@ -2,7 +2,9 @@ import os
 import urllib.request
 import zipfile
 import shutil
+from utils import get_config
 
+SEED = get_config()['seed']
 INDIR = '../data/input'
 INTRNDIR = '../data/input/train'
 INTSTDIR = '../data/input/test'
@@ -14,7 +16,7 @@ PIPE200 = os.path.join(OUTDIR, '_200_{}')
 PIPE300 = os.path.join(OUTDIR, '_300')
 EX_COLS = ['Engine', 'RUL', 'EncodedEngine', 'Weight', 'DiffFlightNo']
 
-for _dir in [INDIR, OUTDIR, IMPDIR, PIPE000, PIPE200, PIPE300]:
+for _dir in [INDIR, OUTDIR, IMPDIR, PIPE000, PIPE300]:
     if not os.path.exists(_dir):
         os.makedirs(_dir)
 
