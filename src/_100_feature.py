@@ -63,24 +63,6 @@ def extract_tsfresh_features(trn_path,
     return output_path
 
 
-def drop_zero_stddev_features(input_path, output_path=os.path.join(CONST.PIPE100,
-                                                                   'drop_zero_std_tsfeaure.f')):
-    if os.path.exists(output_path):
-        return output_path
-
-    dataset = pd.read_feather(input_path)
-
-    print("Before drop features,", dataset.shape)
-    cols_std = dataset.std()
-    drop_features = cols_std[cols_std == 0].index.values
-    dataset = dataset.drop(columns=drop_features)
-    print("After drop features,", dataset.shape)
-
-    dataset.to_feather(output_path)
-
-    return output_path
-
-
 def feature_selection_by_lgbm(input_path, output_path=os.path.join(CONST.PIPE100,
                                                                    'lgb_selected_tsfeature.f')):
     if os.path.exists(output_path):
@@ -231,7 +213,6 @@ def create_dataset(trn_base_path, tst_base_path, fc_setting,
     tst_dataset = tst_dataset.reset_index().rename(columns={'index': 'Engine'})
 
     # TODO 2019-03-26 : 加重平均のためのWeightを導入したい
-
     print("Train dataset size =", trn_dataset.shape)
     print("Test dataset size =", tst_dataset.shape)
     assert (set([c for c in trn_dataset.columns if c not in CONST.EX_COLS]) ==
@@ -247,7 +228,7 @@ def _100_feature():
     trn_base_path, tst_base_path = _000_preprocess()
 
     _path = extract_tsfresh_features(trn_base_path)
-    _path = drop_zero_stddev_features(_path)
+    # _path = drop_zero_stddev_features(_path)
     _path = feature_selection_by_lgbm(_path)
     fc_dict = feature_to_fc_settting_dict(_path)
 
