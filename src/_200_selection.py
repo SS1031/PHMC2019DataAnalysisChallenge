@@ -1,11 +1,12 @@
 import os
-import CONST
+import hashlib
 import pandas as pd
 import lightgbm as lgb
 
 from sklearn import preprocessing
 from sklearn.model_selection import GroupShuffleSplit
 
+import CONST
 from _100_feature import _100_feature
 from utils import get_config
 
@@ -16,8 +17,11 @@ if not os.path.exists(CONST.PIPE200):
 
 
 def _201_drop_zero_variance(in_trn_path, in_tst_path,
-                            out_trn_path=os.path.join(CONST.PIPE200, '_201_trn.f'),
-                            out_tst_path=os.path.join(CONST.PIPE200, '_201_tst.f'), ):
+                            out_trn_path=os.path.join(CONST.PIPE200, '_201_trn_{}.f'),
+                            out_tst_path=os.path.join(CONST.PIPE200, '_201_tst_{}.f'), ):
+    _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
+    out_trn_path = out_trn_path.format(_hash)
+    out_tst_path = out_tst_path.format(_hash)
     if get_config()['debug']:
         out_trn_path += '.debug'
         out_tst_path += '.debug'
@@ -42,8 +46,11 @@ def _201_drop_zero_variance(in_trn_path, in_tst_path,
 
 
 def _202_lgb_top_100(in_trn_path, in_tst_path,
-                     out_trn_path=os.path.join(CONST.PIPE200, '_202_trn.f'),
-                     out_tst_path=os.path.join(CONST.PIPE200, '_202_tst.f')):
+                     out_trn_path=os.path.join(CONST.PIPE200, '_202_trn_{}.f'),
+                     out_tst_path=os.path.join(CONST.PIPE200, '_202_tst_{}.f')):
+    _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
+    out_trn_path = out_trn_path.format(_hash)
+    out_tst_path = out_tst_path.format(_hash)
     if get_config()['debug']:
         out_trn_path += '.debug'
         out_tst_path += '.debug'
@@ -77,7 +84,7 @@ def _202_lgb_top_100(in_trn_path, in_tst_path,
             "learning_rate": 0.01,
             # "feature_fraction": 0.9,
             # "bagging_fraction": 0.8,
-            # "bagging_freq": 5,
+            # "bagging_freq": 1,
             "verbose": 1,
             "bagging_seed": seed,
             "feature_fraction_seed": seed,

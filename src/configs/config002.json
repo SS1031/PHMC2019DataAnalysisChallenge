@@ -1,0 +1,6 @@
+{
+  "debug": true,
+  "seed": 42,
+  "_100_feature": "minimal",
+  "_200_selection": ["drop_zero_variance", "lgb_top_100"]
+}
