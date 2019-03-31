@@ -13,10 +13,12 @@ IMPDIR = os.path.join(OUTDIR, 'imp')
 PIPE000 = os.path.join(OUTDIR, '_000')
 PIPE100 = os.path.join(OUTDIR, '_100_{}')
 PIPE200 = os.path.join(OUTDIR, '_200_{}')
-PIPE300 = os.path.join(OUTDIR, '_300')
+PIPE300 = os.path.join(OUTDIR, '_300_optimization')
+PIPE400 = os.path.join(OUTDIR, '_400_prediction')
 EX_COLS = ['Engine', 'RUL', 'EncodedEngine', 'Weight', 'DiffFlightNo']
+RESULT_SUMMARY = '../data/output/result_summary.csv'
 
-for _dir in [INDIR, OUTDIR, IMPDIR, PIPE000, PIPE300]:
+for _dir in [INDIR, OUTDIR, IMPDIR, PIPE000, PIPE300, PIPE400]:
     if not os.path.exists(_dir):
         os.makedirs(_dir)
 

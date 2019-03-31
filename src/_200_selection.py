@@ -82,9 +82,6 @@ def _202_lgb_top_100(in_trn_path, in_tst_path,
             "objective": "regression",
             "metric": "mae",
             "learning_rate": 0.01,
-            # "feature_fraction": 0.9,
-            # "bagging_fraction": 0.8,
-            # "bagging_freq": 1,
             "verbose": 1,
             "bagging_seed": seed,
             "feature_fraction_seed": seed,
@@ -110,8 +107,10 @@ def _202_lgb_top_100(in_trn_path, in_tst_path,
     mean_feature_importance = feature_importance_df[
         ["feature", "importance"]
     ].groupby("feature").mean()
+    mean_feature_importance = mean_feature_importance.sort_values(by="importance", ascending=False)
 
-    drop_cols = mean_feature_importance[mean_feature_importance == 0].dropna().index.values
+    # drop_cols = mean_feature_importance[mean_feature_importance == 0].dropna().index.values
+    drop_cols = mean_feature_importance[100:].index.values
 
     print("Before drop features,", trn_dataset.shape)
     trn_dataset = trn_dataset.drop(columns=drop_cols)
@@ -138,4 +137,5 @@ def _200_selection():
 
 
 if __name__ == '__main__':
-    trn_path, tst_path = _200_selection()
+    trn_path, tst_path = _100_feature()
+    trn_path, tst_path = _201_drop_zero_variance(trn_path, tst_path)

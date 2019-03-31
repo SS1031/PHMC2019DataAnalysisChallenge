@@ -42,13 +42,13 @@ def create_dataset(trn_base_path, tst_base_path,
     trn_base = pd.read_csv(trn_base_path)
     tst_base = pd.read_csv(tst_base_path)
 
+    if get_config()['debug']:
+        t_no_list = list(range(10, 350, 100))
+    else:
+        t_no_list = list(range(10, 350, 5))
+
     # 訓練データ作成
     trn_dataset = pd.DataFrame()
-    if get_config()['debug']:
-        t_no_list = list(range(30, 350, 100))
-    else:
-        t_no_list = list(range(30, 350, 10))
-
     for t_no in t_no_list:
         print('Flight NO', t_no)
         t_engine = trn_base.groupby('Engine').FlightNo.max().index[
@@ -82,12 +82,6 @@ def create_dataset(trn_base_path, tst_base_path,
     tst_dataset['DiffFlightNo'] = (
             tst_base.groupby('Engine').FlightNo.max() - tst_dataset['CurrentFlightNo']
     )
-
-    # TEST DATA Augmentation
-    if get_config()['debug']:
-        t_no_list = list(range(30, 200, 50))
-    else:
-        t_no_list = list(range(30, 200, 10))
 
     for t_no in t_no_list:
         print('Flight NO', t_no)
