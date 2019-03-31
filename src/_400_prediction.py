@@ -65,13 +65,13 @@ def _403_predict_weighted_average():
     # assert_engine = np.array(['Test' + str(i).zfill(3) for i in range(1, 101)]).astype(object)
     # assert (sbmt['Engine'].values == assert_engine).all()
     # utils.update_result(func_name, score)
-    #
     # output_path = os.path.join(CONST.PIPE400, f'{func_name}_{utils.get_config_name()}.csv')
     # sbmt[['Predicted RUL']].to_csv(output_path, index=False)
     return preds
 
 
 if __name__ == '__main__':
-    preds = _403_predict_weighted_average()
-    for col in [c for c in preds.columns if 'fold' in c]:
-        preds[col] = preds[col] - preds['DiffFlightNo']
+    preds = _402_seed_average_weight1()
+    # preds = _403_predict_weighted_average()
+    # for col in [c for c in preds.columns if 'fold' in c]:
+    #     preds[col] = preds[col] - preds['DiffFlightNo']
