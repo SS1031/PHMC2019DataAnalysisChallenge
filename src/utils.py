@@ -32,7 +32,7 @@ def update_result(pred_function_name, score):
     else:
         df = pd.DataFrame(columns=['config', 'pred_func_name', 'exec time', 'score'])
 
-    df = pd.concat([df, new_row], axis=0)
+    df = pd.concat([df, new_row], axis=0).reset_index(drop=True)
     df.to_csv(CONST.RESULT_SUMMARY, index=False)
     print("=== Update result summary ==== ")
     print(df)
