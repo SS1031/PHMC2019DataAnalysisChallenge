@@ -205,6 +205,7 @@ mapper = {
     "drop_zero_variance": _201_drop_zero_variance,
     "lgb_top_100": _203_lgb_top_100,
     "lgb_top_500": _204_lgb_top_500,
+    "lgb_top_200": _205_lgb_top_200,
 }
 
 
