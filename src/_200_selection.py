@@ -69,7 +69,7 @@ def _202_lgb_top_x(trn, tst, k):
             "boosting_type": "gbdt",
             "objective": "regression",
             "metric": "mae",
-            "learning_rate": 0.01,
+            "learning_rate": 0.005,
             "verbose": 1,
             "bagging_seed": seed,
             "feature_fraction_seed": seed,
@@ -82,7 +82,7 @@ def _202_lgb_top_x(trn, tst, k):
                           valid_names=['train', 'valid'],
                           evals_result=eval_results,
                           verbose_eval=100,
-                          num_boost_round=100,
+                          num_boost_round=1000,
                           early_stopping_rounds=40)
 
         print(eval_results['valid']['l1'][model.best_iteration - 1])
@@ -168,6 +168,32 @@ def _204_lgb_top_500(in_trn_path, in_tst_path,
     trn_dataset['EncodedEngine'] = le.fit_transform(trn_dataset['Engine'])
 
     trn_dataset, tst_dataset = _202_lgb_top_x(trn_dataset, tst_dataset, k=500)
+
+    trn_dataset.to_feather(out_trn_path)
+    tst_dataset.to_feather(out_tst_path)
+
+    return out_trn_path, out_tst_path
+
+
+def _205_lgb_top_200(in_trn_path, in_tst_path,
+                     out_trn_path=os.path.join(CONST.PIPE200, '_205_trn_{}.f'),
+                     out_tst_path=os.path.join(CONST.PIPE200, '_205_tst_{}.f')):
+    _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
+    out_trn_path = out_trn_path.format(_hash)
+    out_tst_path = out_tst_path.format(_hash)
+    if get_config()['debug']:
+        out_trn_path += '.debug'
+    out_tst_path += '.debug'
+    if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
+        return out_trn_path, out_tst_path
+
+    trn_dataset = pd.read_feather(in_trn_path)
+    tst_dataset = pd.read_feather(in_tst_path)
+
+    le = preprocessing.LabelEncoder()
+    trn_dataset['EncodedEngine'] = le.fit_transform(trn_dataset['Engine'])
+
+    trn_dataset, tst_dataset = _202_lgb_top_x(trn_dataset, tst_dataset, k=200)
 
     trn_dataset.to_feather(out_trn_path)
     tst_dataset.to_feather(out_tst_path)
