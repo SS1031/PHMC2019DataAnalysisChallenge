@@ -45,7 +45,12 @@ def create_dataset(trn_base_path, tst_base_path,
     if get_config()['debug']:
         t_no_list = list(range(10, 350, 100))
     else:
-        t_no_list = list(range(10, 350, 5))
+        # 2019-04-02 テストデータのFlightNo maxを元としてデータを作成
+        t_no_list = tst_base.groupby('Engine').FlightNo.max().values.tolist()
+        t_no_list += list(range(10, 350, 5))
+        t_no_list = list(set(t_no_list))
+
+        # t_no_list = list(range(10, 350, 5))
 
     # 訓練データ作成
     trn_dataset = pd.DataFrame()
@@ -63,7 +68,8 @@ def create_dataset(trn_base_path, tst_base_path,
 
         tmp_dataset = pd.concat([
             extracted_features,
-            trn_base[trn_base.Engine.isin(t_engine)].groupby(['Engine']).FlightNo.max().to_frame('RUL') - t_no
+            trn_base[trn_base.Engine.isin(t_engine)].groupby(['Engine']).FlightNo.max().to_frame(
+                'RUL') - t_no
         ], axis=1).reset_index().rename(columns={'index': 'Engine'})
 
         trn_dataset = pd.concat([trn_dataset, tmp_dataset], axis=0).reset_index(drop=True)
@@ -123,4 +129,8 @@ def _100_feature():
 
 
 if __name__ == '__main__':
-    trn_dataset_path, tst_dataset_path = _100_feature()
+    # trn_dataset_path, tst_dataset_path = _100_feature()
+    trn_base_path, tst_base_path = _000_preprocess()
+    trn_base = pd.read_csv(trn_base_path)
+    tst_base = pd.read_csv(tst_base_path)
+

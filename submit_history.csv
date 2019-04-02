@@ -1,2 +1,2 @@
-original_name,submit_name
-_402_seed_average_weight1_config003.csv,C0004_01_04_2019.csv
+original_name,submit_name,cv_score,public_score,memo
+_402_seed_average_weight1_config003.csv,C0004_01_04_2019.csv,27.05200816,27.63412247944032,t_no_list=list(range(10, 350, 100))でデータセット作成
