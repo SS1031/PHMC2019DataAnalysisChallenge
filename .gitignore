@@ -1,23 +1,12 @@
-.~*
-data/
-data/input/
-data/features/
-tmp_feats/*
-src/adohoc/*
-report/*
-reference/*
-features/*
-model_CP/*
-log/*
 .idea/
-weights/*
+data/input/*
+data/output/*
+!data/output/_300_optimization/
+!data/output/_400_prediction/
 
 .DS_Store
 
 !.gitkeep
-!input/stage1_train_hsv_cluster.csv
-!input/stage1_test_hsv_cluster.csv
-!input/cluster_stats.csv
 
 
 # Byte-compiled / optimized / DLL files

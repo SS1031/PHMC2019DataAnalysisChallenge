@@ -55,7 +55,7 @@ def _300_optimize(out_path=os.path.join(CONST.PIPE300, 'optimized_params_{}_{}.j
 
     objective = Objective(trn)
     study = optuna.create_study()
-    study.optimize(objective, n_trials=50)
+    study.optimize(objective, n_trials=25)
     params['num_leaves'] = study.best_params['num_leaves']
     params['min_data_in_leaf'] = study.best_params['min_data_in_leaf']
     params['max_bin'] = study.best_params['max_bin']

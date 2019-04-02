@@ -6,40 +6,17 @@ import lightgbm as lgb
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-trn_base = pd.read_csv(os.path.join(CONST.INDIR, 'concatenated_train.csv'))
-tst_base = pd.read_csv(os.path.join(CONST.INDIR, 'concatenated_test.csv'))
+trn_base = pd.read_csv(os.path.join(CONST.PIPE000, 'trn_base.csv'))
+tst_base = pd.read_csv(os.path.join(CONST.PIPE000, 'tst_base.csv'))
 
-trn_regime = pd.get_dummies(trn_base['Flight Regime'])
-trn_regime.columns = [f'Regime{c}' for c in trn_regime.columns]
-trn_base = pd.concat([trn_base, trn_regime], axis=1)
 
-tst_regime = pd.get_dummies(tst_base['Flight Regime'])
-tst_regime.columns = [f'Regime{c}' for c in tst_regime.columns]
-tst_base = pd.concat([tst_base, tst_regime], axis=1)
-
-feat_cols = ['Altitude', 'Mach #', 'Power Setting (TRA)',
-             'T2 Total temperature at fan inlet ｰR',
-             'T24 Total temperature at LPC outlet ｰR',
-             'T30 Total temperature at HPC outlet ｰR',
-             'T50 Total temperature at LPT outlet ｰR',
-             'P2 Pressure at fan inlet psia',
-             'P15 Total pressure in bypass-duct psia',
-             'P30 Total pressure at HPC outlet psia', 'Nf Physical fan speed rpm',
-             'Nc Physical core speed rpm', 'epr Engine pressure ratio (P50/P2) --',
-             'Ps30 Static pressure at HPC outlet psia',
-             'phi Ratio of fuel flow to Ps30 pps/psi', 'NRf Corrected fan speed rpm',
-             'NRc Corrected core speed rpm', 'BPR Bypass Ratio --',
-             'farB Burner fuel-air ratio --', 'htBleed (Bleed Enthalpy)',
-             'Nf_dmd Demanded fan speed rpm',
-             'PCNfR_dmd Demanded corrected fan speed rpm',
-             'W31 HPT coolant bleed lbm/s', 'W32 LPT coolant bleed lbm/s',
-             'Regime1', 'Regime2', 'Regime3', 'Regime4', 'Regime5', 'Regime6']
+feat_cols = [c for c in trn_base.columns if c not in CONST.EX_COLS]
 
 agg_dict = {}
 for f in feat_cols:
-    # agg_dict[f] = ['mean', 'median', 'min', 'max', 'sum', 'std',
-    #                'var', 'sem', 'mad', 'skew', 'prod', pd.DataFrame.kurt]
-    agg_dict[f] = ['mean']
+    agg_dict[f] = ['mean', 'median', 'min', 'max', 'sum', 'std',
+                   'var', 'sem', 'mad', 'skew', 'prod', pd.DataFrame.kurt]
+    # agg_dict[f] = ['mean']
 
 trn_dataset = pd.DataFrame()
 t_no_list = set(tst_base.groupby('Engine').FlightNo.max().values)
