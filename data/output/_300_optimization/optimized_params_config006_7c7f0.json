@@ -1,0 +1,1 @@
+{"boosting_type": "gbdt", "objective": "regression", "metric": "mae", "learning_rate": 0.005, "num_leaves": 60, "min_data_in_leaf": 38, "max_bin": 54, "bagging_fraction": 0.7267058510560512, "lambda_l1": 0.07397646756275134, "bagging_seed": 42, "feature_fraction_seed": 42, "seed": 42, "verbose": -1, "feature_fraction": 0.8485266279023455, "lambda_l2": 0.08509483824934194}
