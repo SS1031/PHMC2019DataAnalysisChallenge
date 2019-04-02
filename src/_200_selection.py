@@ -11,6 +11,7 @@ from sklearn.model_selection import GroupShuffleSplit
 import CONST
 from _100_feature import _100_feature
 from utils import get_config
+from utils import get_config_name
 
 selections = get_config()['_200_selection']
 CONST.PIPE200 = CONST.PIPE200.format("-".join(selections))
@@ -104,7 +105,7 @@ def _202_lgb_top_x(trn, tst, k):
     plt.title('LightGBM Features (avg over folds)')
     plt.tight_layout()
     plt.savefig(os.path.join(CONST.IMPDIR,
-                             f'_202_lgb_top_{k}_{utils.get_config_name()}.png'))
+                             f'_202_lgb_top_{k}_{get_config_name()}.png'))
 
     mean_feature_importance = feature_importance_df[
         ["feature", "importance"]
