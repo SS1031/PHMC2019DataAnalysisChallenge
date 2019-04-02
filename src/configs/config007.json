@@ -1,0 +1,6 @@
+{
+  "debug": false,
+  "seed": 42,
+  "_100_feature": "comprehensive",
+  "_200_selection": ["drop_zero_variance", "lgb_top_100"]
+}
