@@ -34,10 +34,11 @@ def _300_optimize(out_path=os.path.join(CONST.PIPE300, 'optimized_params_{}_{}.j
         def __call__(self, trial):
             trn = self.trn
             params['num_leaves'] = trial.suggest_int('num_leaves', 10, 150)
-            params['min_data_in_leaf'] = trial.suggest_int('min_data_in_leaf', 10, 100)
+            params['min_data_in_leaf'] = trial.suggest_int('min_data_in_leaf', 20, 1000)
             params['max_bin'] = trial.suggest_int('max_bin', 32, 512)
             params['feature_fraction'] = trial.suggest_uniform('feature_fraction', 0.7, 1.0)
             params['bagging_fraction'] = trial.suggest_uniform('bagging_fraction', 0.7, 1.0)
+            params['bagging_freq'] = trial.suggest_uniform('bagging_freq', 1, 3)
             params['lambda_l1'] = trial.suggest_uniform('lambda_l1', .0, .1)
             params['lambda_l2'] = trial.suggest_uniform('lambda_l2', .0, .1)
             params['verbose'] = -1
@@ -55,7 +56,7 @@ def _300_optimize(out_path=os.path.join(CONST.PIPE300, 'optimized_params_{}_{}.j
 
     objective = Objective(trn)
     study = optuna.create_study()
-    study.optimize(objective, n_trials=25)
+    study.optimize(objective, n_trials=30)
     params['num_leaves'] = study.best_params['num_leaves']
     params['min_data_in_leaf'] = study.best_params['min_data_in_leaf']
     params['max_bin'] = study.best_params['max_bin']

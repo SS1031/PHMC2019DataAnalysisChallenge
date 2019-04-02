@@ -45,34 +45,19 @@ def _201_drop_zero_variance(in_trn_path, in_tst_path,
     return out_trn_path, out_tst_path
 
 
-def _202_lgb_top_100(in_trn_path, in_tst_path,
-                     out_trn_path=os.path.join(CONST.PIPE200, '_202_trn_{}.f'),
-                     out_tst_path=os.path.join(CONST.PIPE200, '_202_tst_{}.f')):
-    _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
-    out_trn_path = out_trn_path.format(_hash)
-    out_tst_path = out_tst_path.format(_hash)
-    if get_config()['debug']:
-        out_trn_path += '.debug'
-        out_tst_path += '.debug'
-    if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
-        return out_trn_path, out_tst_path
-
-    trn_dataset = pd.read_feather(in_trn_path)
-    tst_dataset = pd.read_feather(in_tst_path)
-
-    le = preprocessing.LabelEncoder()
-    trn_dataset['EncodedEngine'] = le.fit_transform(trn_dataset['Engine'])
-
+def _202_lgb_top_x(trn, tst, k):
     gsp = GroupShuffleSplit(n_splits=8, random_state=CONST.SEED)
-    features = [c for c in trn_dataset.columns if c not in CONST.EX_COLS]
+    features = [c for c in trn.columns if c not in CONST.EX_COLS]
     feature_importance_df = pd.DataFrame()
-    for ix, (train_index, valid_index) in enumerate(gsp.split(X=trn_dataset,
-                                                              groups=trn_dataset.EncodedEngine)):
+
+    for ix, (train_index, valid_index) in enumerate(gsp.split(X=trn, groups=trn.EncodedEngine)):
         print("Fold", ix + 1)
         seed = CONST.SEED * ix
 
-        X_train, y_train = trn_dataset.loc[train_index, features], trn_dataset.loc[train_index, 'RUL']
-        X_valid, y_valid = trn_dataset.loc[valid_index, features], trn_dataset.loc[valid_index, 'RUL']
+        X_train, y_train = trn.loc[train_index, features], trn.loc[
+            train_index, 'RUL']
+        X_valid, y_valid = trn.loc[valid_index, features], trn.loc[
+            valid_index, 'RUL']
 
         d_train = lgb.Dataset(X_train, label=y_train, feature_name=features)
         d_valid = lgb.Dataset(X_valid, label=y_valid, feature_name=features)
@@ -104,18 +89,83 @@ def _202_lgb_top_100(in_trn_path, in_tst_path,
         fold_importance_df["fold"] = ix
         feature_importance_df = pd.concat([feature_importance_df, fold_importance_df], axis=0)
 
+    cols = (feature_importance_df[
+                ["feature", "importance"]
+            ].groupby("feature").mean().sort_values(by="importance",
+                                                    ascending=False)[:100].index)
+    best_features = feature_importance_df.loc[feature_importance_df.feature.isin(cols)]
+    plt.figure(figsize=(14, 25))
+    sns.barplot(x="importance",
+                y="feature",
+                data=best_features.sort_values(by="importance",
+                                               ascending=False))
+    plt.title('LightGBM Features (avg over folds)')
+    plt.tight_layout()
+    plt.savefig(os.path.join(CONST.IMPDIR,
+                             f'_202_lgb_top_{k}_{utils.get_config_name()}.png'))
+
     mean_feature_importance = feature_importance_df[
         ["feature", "importance"]
     ].groupby("feature").mean()
     mean_feature_importance = mean_feature_importance.sort_values(by="importance", ascending=False)
 
     # drop_cols = mean_feature_importance[mean_feature_importance == 0].dropna().index.values
-    drop_cols = mean_feature_importance[100:].index.values
+    drop_cols = mean_feature_importance[k:].index.values
 
-    print("Before drop features,", trn_dataset.shape)
-    trn_dataset = trn_dataset.drop(columns=drop_cols)
-    tst_dataset = tst_dataset.drop(columns=drop_cols)
-    print("After drop features,", trn_dataset.shape)
+    print("Before drop features,", trn.shape)
+    trn = trn.drop(columns=drop_cols)
+    tst = tst.drop(columns=drop_cols)
+    print("After drop features,", trn.shape)
+
+    return trn, tst
+
+
+def _203_lgb_top_100(in_trn_path, in_tst_path,
+                     out_trn_path=os.path.join(CONST.PIPE200, '_203_trn_{}.f'),
+                     out_tst_path=os.path.join(CONST.PIPE200, '_203_tst_{}.f')):
+    _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
+    out_trn_path = out_trn_path.format(_hash)
+    out_tst_path = out_tst_path.format(_hash)
+    if get_config()['debug']:
+        out_trn_path += '.debug'
+        out_tst_path += '.debug'
+    if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
+        return out_trn_path, out_tst_path
+
+    trn_dataset = pd.read_feather(in_trn_path)
+    tst_dataset = pd.read_feather(in_tst_path)
+
+    le = preprocessing.LabelEncoder()
+    trn_dataset['EncodedEngine'] = le.fit_transform(trn_dataset['Engine'])
+
+    trn_dataset, tst_dataset = _202_lgb_top_x(trn_dataset, tst_dataset, k=100)
+
+    trn_dataset.to_feather(out_trn_path)
+    tst_dataset.to_feather(out_tst_path)
+
+    return out_trn_path, out_tst_path
+
+
+def _204_lgb_top_500(in_trn_path, in_tst_path,
+                     out_trn_path=os.path.join(CONST.PIPE200, '_204_trn_{}.f'),
+                     out_tst_path=os.path.join(CONST.PIPE200, '_204_tst_{}.f')):
+    _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
+    out_trn_path = out_trn_path.format(_hash)
+    out_tst_path = out_tst_path.format(_hash)
+    if get_config()['debug']:
+        out_trn_path += '.debug'
+    out_tst_path += '.debug'
+    if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
+        return out_trn_path, out_tst_path
+
+    trn_dataset = pd.read_feather(in_trn_path)
+    tst_dataset = pd.read_feather(in_tst_path)
+
+    le = preprocessing.LabelEncoder()
+    trn_dataset['EncodedEngine'] = le.fit_transform(trn_dataset['Engine'])
+
+    trn_dataset, tst_dataset = _202_lgb_top_x(trn_dataset, tst_dataset, k=500)
+
     trn_dataset.to_feather(out_trn_path)
     tst_dataset.to_feather(out_tst_path)
 
@@ -124,7 +174,8 @@ def _202_lgb_top_100(in_trn_path, in_tst_path,
 
 mapper = {
     "drop_zero_variance": _201_drop_zero_variance,
-    "lgb_top_100": _202_lgb_top_100,
+    "lgb_top_100": _203_lgb_top_100,
+    "lgb_top_500": _204_lgb_top_500,
 }
 
 
