@@ -43,11 +43,11 @@ def create_dataset(trn_base_path, tst_base_path,
     tst_base = pd.read_csv(tst_base_path)
 
     if get_config()['debug']:
-        t_no_list = list(range(10, 350, 100))
+        t_no_list = list(range(20, 350, 100))
     else:
         # 2019-04-02 テストデータのFlightNo maxを元としてデータを作成
         t_no_list = tst_base.groupby('Engine').FlightNo.max().values.tolist()
-        t_no_list += list(range(10, 350, 5))
+        t_no_list += list(range(20, 350, 5))
         t_no_list = list(set(t_no_list))
 
         # t_no_list = list(range(10, 350, 5))
