@@ -1,9 +1,12 @@
 import os
+import numpy as np
+import random
 import pandas as pd
 import datetime
 import configparser
 import json
 import CONST
+from _000_preprocess import _000_preprocess
 
 
 def get_config_name():
@@ -38,6 +41,23 @@ def update_result(pred_function_name, score):
     print(df)
 
 
+def get_sort_cv_id(seed=42):
+    """訓練データのエンジンを寿命が長い順に並べ1-8のidを振っていく
+    """
+    random.seed(seed)
+    trn_base_path, tst_base = _000_preprocess()
+    trn = pd.read_csv(trn_base_path)
+
+    flight_max = trn.groupby('Engine').FlightNo.max().sort_values().to_frame('Life')
+    remainder_list = list(range(1, len(flight_max) % 8 + 1))
+    flight_max['cv_id'] = (random.sample([1, 2, 3, 4, 5, 6, 7, 8], 8) * (len(flight_max) // 8) +
+                           random.sample(remainder_list, len(remainder_list)))
+    flight_max.reset_index(inplace=True)
+
+    return flight_max[['Engine', 'cv_id']]
+
+
 if __name__ == '__main__':
     print(get_config_name())
     print(get_config())
+    print(get_sort_cv_id())

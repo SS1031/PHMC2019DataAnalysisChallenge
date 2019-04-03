@@ -6,7 +6,7 @@ import pandas as pd
 
 import CONST
 from utils import get_config_name
-from lgb_cv import lgb_n_fold_cv
+from lgb_cv import lgb_n_fold_cv_random_gs
 from _200_selection import _200_selection
 
 params = {
@@ -43,7 +43,7 @@ def _300_optimize(out_path=os.path.join(CONST.PIPE300, 'optimized_params_{}_{}.j
             params['lambda_l2'] = trial.suggest_uniform('lambda_l2', .0, .1)
             params['verbose'] = -1
 
-            return lgb_n_fold_cv(trn, params, folds=8)
+            return lgb_n_fold_cv_random_gs(trn, params, folds=8)
 
     trn_path, tst_path = _200_selection()
     _hash = hashlib.md5((trn_path + tst_path).encode('utf-8')).hexdigest()[:5]

@@ -16,121 +16,108 @@ import CONST
 from _000_preprocess import _000_preprocess
 from utils import get_config
 
-mapper = {
+feature_set_mapper = {
     "comprehensive": ComprehensiveFCParameters,
     "efficient": EfficientFCParameters,
     "minimal": MinimalFCParameters,
 }
 
-fc_parameter = mapper[get_config()['_100_feature']]()
+fc_parameter = feature_set_mapper[get_config()['_100_feature_set']]()
+feature_func = get_config()['_100_feature_func']
 
-CONST.PIPE100 = CONST.PIPE100.format(fc_parameter.__class__.__name__)
+CONST.PIPE100 = CONST.PIPE100.format(fc_parameter.__class__.__name__,
+                                     get_config()['_100_feature_func'])
+
 if not os.path.exists(CONST.PIPE100):
     os.makedirs(CONST.PIPE100)
 
 
-def create_dataset(trn_base_path, tst_base_path,
-                   trn_output_path=os.path.join(CONST.PIPE100, 'trn.f'),
-                   tst_output_path=os.path.join(CONST.PIPE100, 'tst.f')):
-    if get_config()['debug']:
-        trn_output_path += '.debug'
-        tst_output_path += '.debug'
+def create_split_dataset(base_df, split_no_list=[], istest=False):
+    dataset = pd.DataFrame()
+    if istest:
+        dataset = extract_features(base_df, column_id="Engine", column_sort="FlightNo",
+                                   default_fc_parameters=fc_parameter)
+        dataset = pd.concat([
+            dataset,
+            base_df.groupby('Engine').FlightNo.max().to_frame('CurrentFlightNo')],
+            axis=1
+        )
+        dataset = dataset.reset_index().rename(columns={'index': 'Engine'})
+        return dataset
 
-    if os.path.exists(trn_output_path) and os.path.exists(tst_output_path):
-        return trn_output_path, tst_output_path
-
-    trn_base = pd.read_csv(trn_base_path)
-    tst_base = pd.read_csv(tst_base_path)
-
-    if get_config()['debug']:
-        t_no_list = list(range(20, 350, 100))
-    else:
-        # 2019-04-02 テストデータのFlightNo maxを元としてデータを作成
-        t_no_list = tst_base.groupby('Engine').FlightNo.max().values.tolist()
-        t_no_list += list(range(20, 350, 5))
-        t_no_list = list(set(t_no_list))
-
-        # t_no_list = list(range(10, 350, 5))
-
-    # 訓練データ作成
-    trn_dataset = pd.DataFrame()
-    for t_no in t_no_list:
-        print('Flight NO', t_no)
-        t_engine = trn_base.groupby('Engine').FlightNo.max().index[
-            trn_base.groupby('Engine').FlightNo.max() >= t_no
-            ].values
-        tmp = trn_base[(trn_base.FlightNo <= t_no) & trn_base.Engine.isin(t_engine)]
+    flight_max = base_df.groupby('Engine').FlightNo.max()
+    for split_no in split_no_list:
+        print('Flight NO', split_no)
+        target_engine = flight_max.index[flight_max >= split_no].values
+        tmp = base_df[(base_df.FlightNo <= split_no) & base_df.Engine.isin(target_engine)]
         extracted_features = extract_features(tmp,
                                               column_id="Engine",
                                               column_sort="FlightNo",
                                               default_fc_parameters=fc_parameter)
-        extracted_features['CurrentFlightNo'] = t_no
-
+        extracted_features['CurrentFlightNo'] = split_no
         tmp_dataset = pd.concat([
             extracted_features,
-            trn_base[trn_base.Engine.isin(t_engine)].groupby(['Engine']).FlightNo.max().to_frame(
-                'RUL') - t_no
+            base_df[base_df.Engine.isin(target_engine)].groupby(['Engine']).FlightNo.max().to_frame(
+                'RUL') - split_no
         ], axis=1).reset_index().rename(columns={'index': 'Engine'})
+        dataset = pd.concat([dataset, tmp_dataset], axis=0).reset_index(drop=True)
 
-        trn_dataset = pd.concat([trn_dataset, tmp_dataset], axis=0).reset_index(drop=True)
+    return dataset
 
-    # テストデータ作成
-    tst_dataset = extract_features(tst_base, column_id="Engine", column_sort="FlightNo",
-                                   default_fc_parameters=fc_parameter)
-    tst_dataset = pd.concat([
-        tst_dataset,
-        tst_base.groupby('Engine').FlightNo.max().to_frame('CurrentFlightNo')],
-        axis=1
-    )
-    # TTA的な加重平均のためのweight, weight = CurrentFlightNo / MaxFlightNo
-    tst_dataset['Weight'] = 1
-    # TTA用のDiffFlightNo
-    tst_dataset['DiffFlightNo'] = (
-            tst_base.groupby('Engine').FlightNo.max() - tst_dataset['CurrentFlightNo']
-    )
 
-    for t_no in t_no_list:
-        print('Flight NO', t_no)
-        t_engine = tst_base.groupby('Engine').size().index[
-            tst_base.groupby('Engine').FlightNo.max() >= t_no].values
-        tmp = tst_base[(tst_base.FlightNo <= t_no) & tst_base.Engine.isin(t_engine)]
-        extracted_features = extract_features(tmp,
-                                              column_id="Engine",
-                                              column_sort="FlightNo",
-                                              default_fc_parameters=fc_parameter)
+def _101_simple_split(in_trn_path, in_tst_path,
+                      out_trn_path=os.path.join(CONST.PIPE100, 'trn.f'),
+                      out_tst_path=os.path.join(CONST.PIPE100, 'tst.f')):
+    if get_config()['debug']:
+        out_trn_path += '.debug'
+        out_tst_path += '.debug'
 
-        extracted_features['CurrentFlightNo'] = t_no
-        # 加重平均計算のためのWeight
-        extracted_features['Weight'] = t_no / tst_base.groupby('Engine').FlightNo.max()
-        # TTA用のDiffFlightNo
-        extracted_features['DiffFlightNo'] = (
-                tst_base.groupby('Engine').FlightNo.max() - t_no
-        )
-        tst_dataset = pd.concat([tst_dataset, extracted_features], axis=0)
+    if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
+        return out_trn_path, out_tst_path
 
-    tst_dataset = tst_dataset.reset_index().rename(columns={'index': 'Engine'})
+    trn_base = pd.read_csv(in_trn_path)
+    tst_base = pd.read_csv(in_tst_path)
 
-    # TODO 2019-03-26 : 加重平均のためのWeightを導入したい
+    if get_config()['debug']:
+        split_no_list = list(range(20, 350, 100))
+    else:
+        # 2019-04-02 テストデータのFlightNo maxを元としてデータを作成
+        split_no_list = tst_base.groupby('Engine').FlightNo.max().values.tolist()
+        split_no_list += list(range(20, 350, 5))
+        split_no_list = list(set(split_no_list))
+
+    # 訓練データ作成
+    trn_dataset = create_split_dataset(trn_base, split_no_list)
+    print("Create Test Dataset")
+    tst_dataset = create_split_dataset(tst_base, istest=True)
+
     print("Train dataset size =", trn_dataset.shape)
     print("Test dataset size =", tst_dataset.shape)
-    assert (set([c for c in trn_dataset.columns if c not in CONST.EX_COLS]) ==
+    assert (set([c for c in trn_dataset.olumns if c not in CONST.EX_COLS]) ==
             set([c for c in tst_dataset.columns if c not in CONST.EX_COLS]))
 
-    trn_dataset.to_feather(trn_output_path)
-    tst_dataset.to_feather(tst_output_path)
+    trn_dataset.to_feather(out_trn_path)
+    tst_dataset.to_feather(out_tst_path)
 
-    return trn_output_path, tst_output_path
+    return out_trn_path, out_tst_path
+
+
+# def _102_simple_split_cv_id(in_trn_path, in_tst_path,
+#                             out_trn_path=os.path.join(CONST.PIPE100, 'trn.f'),
+#                             out_tst_path=os.path.join(CONST.PIPE100, 'tst.f')):
+#     pass
+
+
+func_mapper = {
+    "SimpleSplit": _101_simple_split,
+}
 
 
 def _100_feature():
     trn_base_path, tst_base_path = _000_preprocess()
-    trn_dataset_path, tst_dataset_path = create_dataset(trn_base_path, tst_base_path)
+    trn_dataset_path, tst_dataset_path = func_mapper[feature_func](trn_base_path, tst_base_path)
     return trn_dataset_path, tst_dataset_path
 
 
 if __name__ == '__main__':
-    # trn_dataset_path, tst_dataset_path = _100_feature()
-    trn_base_path, tst_base_path = _000_preprocess()
-    trn_base = pd.read_csv(trn_base_path)
-    tst_base = pd.read_csv(tst_base_path)
-
+    trn_dataset_path, tst_dataset_path = _100_feature()

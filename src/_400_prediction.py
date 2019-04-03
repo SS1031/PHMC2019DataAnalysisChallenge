@@ -5,7 +5,7 @@ import numpy as np
 
 import CONST
 import utils
-from lgb_cv import lgb_n_fold_cv
+from lgb_cv import lgb_n_fold_cv_random_gs
 from _300_optimization import _300_optimize
 
 
@@ -18,7 +18,7 @@ def _400_train_predict(seed=CONST.SEED):
     trn = pd.read_feather(trn_path)
     tst = pd.read_feather(tst_path)
 
-    score, preds = lgb_n_fold_cv(trn, params, tst, seed=seed)
+    score, preds = lgb_n_fold_cv_random_gs(trn, params, tst, seed=seed)
 
     return score, preds
 
