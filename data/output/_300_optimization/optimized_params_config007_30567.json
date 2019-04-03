@@ -1,1 +1,17 @@
-{"boosting_type": "gbdt", "objective": "regression", "metric": "mae", "learning_rate": 0.005, "num_leaves": 101, "min_data_in_leaf": 89, "max_bin": 32, "bagging_fraction": 0.9540913210255564, "lambda_l1": 0.004564707300135543, "bagging_seed": 42, "feature_fraction_seed": 42, "seed": 42, "verbose": -1, "feature_fraction": 0.7219224470113369, "lambda_l2": 0.08081155300048408}
+{
+  "boosting_type": "gbdt",
+  "objective": "regression",
+  "metric": "mae",
+  "learning_rate": 0.005,
+  "num_leaves": 101,
+  "min_data_in_leaf": 89,
+  "max_bin": 32,
+  "bagging_fraction": 0.9540913210255564,
+  "lambda_l1": 0.004564707300135543,
+  "bagging_seed": 42,
+  "feature_fraction_seed": 42,
+  "seed": 42,
+  "verbose": -1,
+  "feature_fraction": 0.7219224470113369,
+  "lambda_l2": 0.08081155300048408
+}

@@ -41,7 +41,7 @@ def update_result(pred_function_name, score):
     print(df)
 
 
-def get_sort_cv_id(seed=42):
+def get_cv_id(seed=42):
     """訓練データのエンジンを寿命が長い順に並べ1-8のidを振っていく
     """
     random.seed(seed)
@@ -60,4 +60,4 @@ def get_sort_cv_id(seed=42):
 if __name__ == '__main__':
     print(get_config_name())
     print(get_config())
-    print(get_sort_cv_id())
+    print(get_cv_id())

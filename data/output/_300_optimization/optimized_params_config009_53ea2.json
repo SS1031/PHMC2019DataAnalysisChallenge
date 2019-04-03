@@ -1,1 +1,18 @@
-{"boosting_type": "gbdt", "objective": "regression", "metric": "mae", "learning_rate": 0.005, "num_leaves": 39, "min_data_in_leaf": 361, "max_bin": 474, "bagging_fraction": 0.9978531751484677, "lambda_l1": 0.018580380713201557, "bagging_seed": 42, "feature_fraction_seed": 42, "seed": 42, "verbose": -1, "feature_fraction": 0.8284383379492242, "bagging_freq": 1, "lambda_l2": 0.024399271203458597}
+{
+  "boosting_type": "gbdt",
+  "objective": "regression",
+  "metric": "mae",
+  "learning_rate": 0.005,
+  "num_leaves": 39,
+  "min_data_in_leaf": 361,
+  "max_bin": 474,
+  "bagging_fraction": 0.9978531751484677,
+  "lambda_l1": 0.018580380713201557,
+  "bagging_seed": 42,
+  "feature_fraction_seed": 42,
+  "seed": 42,
+  "verbose": -1,
+  "feature_fraction": 0.8284383379492242,
+  "bagging_freq": 1,
+  "lambda_l2": 0.024399271203458597
+}

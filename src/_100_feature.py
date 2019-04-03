@@ -93,7 +93,7 @@ def _101_simple_split(in_trn_path, in_tst_path,
 
     print("Train dataset size =", trn_dataset.shape)
     print("Test dataset size =", tst_dataset.shape)
-    assert (set([c for c in trn_dataset.olumns if c not in CONST.EX_COLS]) ==
+    assert (set([c for c in trn_dataset.columns if c not in CONST.EX_COLS]) ==
             set([c for c in tst_dataset.columns if c not in CONST.EX_COLS]))
 
     trn_dataset.to_feather(out_trn_path)

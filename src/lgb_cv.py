@@ -90,23 +90,22 @@ def lgb_cv_id_fold(trn, params, tst=None, seed=CONST.SEED, imp_plot=False):
     事前に作成したcv_idでcvを切っていく
     """
     if tst is not None:
-        preds = pd.DataFrame({'Engine': tst.Engine,
-                              'Weight': tst.Weight,
-                              'DiffFlightNo': tst.DiffFlightNo},
-                             index=tst.index)
+        preds = tst[['Engine']].copy()
         feature_importance_df = pd.DataFrame()
+
+    cv_id = utils.get_cv_id(seed)
+    trn = trn.merge(cv_id, on=['Engine'], how='left')
+    assert trn.notnull().all().all()
 
     valid_preds = pd.DataFrame({'preds': [np.nan] * trn.shape[0], 'actual_RUL': trn.RUL})
     le = preprocessing.LabelEncoder()
     trn['EncodedEngine'] = le.fit_transform(trn['Engine'])
     features = [c for c in trn.columns if c not in CONST.EX_COLS]
 
-    gsp = GroupShuffleSplit(n_splits=folds, random_state=seed)
-    gsp.split(X=trn, groups=trn.EncodedEngine)
-    for ix, (train_index, valid_index) in enumerate(gsp.split(X=trn, groups=trn.EncodedEngine)):
-        print(f"Fold {ix + 1}")
-        X_train, y_train = trn.loc[train_index, features], trn.loc[train_index, 'RUL']
-        X_valid, y_valid = trn.loc[valid_index, features], trn.loc[valid_index, 'RUL']
+    for i in list(range(1, 9)):
+        print(f"CV ID = {i}")
+        X_train, y_train = trn.loc[trn.cv_id != i, features], trn.loc[trn.cv_id != i, 'RUL']
+        X_valid, y_valid = trn.loc[trn.cv_id == i, features], trn.loc[trn.cv_id == i, 'RUL']
 
         d_train = lgb.Dataset(X_train, label=y_train, feature_name=features)
         d_valid = lgb.Dataset(X_valid, label=y_valid, feature_name=features)
@@ -121,14 +120,14 @@ def lgb_cv_id_fold(trn, params, tst=None, seed=CONST.SEED, imp_plot=False):
                           num_boost_round=10000,
                           early_stopping_rounds=40)
 
-        valid_preds.loc[valid_index, 'preds'] = model.predict(X_valid)
+        valid_preds.loc[trn.cv_id == i, 'preds'] = model.predict(X_valid)
 
         if tst is not None:
-            preds[f'fold{ix + 1}'] = model.predict(tst[features])
+            preds[f'fold{i + 1}'] = model.predict(tst[features])
             fold_importance_df = pd.DataFrame()
             fold_importance_df["feature"] = features
             fold_importance_df["importance"] = model.feature_importance()
-            fold_importance_df["fold"] = ix
+            fold_importance_df["fold"] = i
             feature_importance_df = pd.concat([feature_importance_df, fold_importance_df], axis=0)
 
     if imp_plot:

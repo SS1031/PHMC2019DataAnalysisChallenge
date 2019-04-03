@@ -15,7 +15,7 @@ PIPE100 = os.path.join(OUTDIR, '_100_set[{}]_func[{}]')
 PIPE200 = os.path.join(OUTDIR, '_200_{}')
 PIPE300 = os.path.join(OUTDIR, '_300_optimization')
 PIPE400 = os.path.join(OUTDIR, '_400_prediction')
-EX_COLS = ['Engine', 'RUL', 'EncodedEngine', 'Weight', 'DiffFlightNo']
+EX_COLS = ['Engine', 'RUL', 'EncodedEngine', 'Weight', 'DiffFlightNo', 'cv_id']
 RESULT_SUMMARY = '../result_summary.csv'
 
 for _dir in [INDIR, OUTDIR, IMPDIR, PIPE000, PIPE300, PIPE400]:

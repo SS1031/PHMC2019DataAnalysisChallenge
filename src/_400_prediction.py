@@ -6,11 +6,13 @@ import numpy as np
 import CONST
 import utils
 from lgb_cv import lgb_n_fold_cv_random_gs
+from lgb_cv import lgb_cv_id_fold
 from _300_optimization import _300_optimize
+from _300_optimization import _301_optimize_cv_id
 
 
 def _400_train_predict(seed=CONST.SEED):
-    params_path, trn_path, tst_path = _300_optimize()
+    params_path, trn_path, tst_path = _301_optimize_cv_id()
 
     with open(params_path, 'r') as fp:
         params = json.load(fp)
@@ -18,7 +20,7 @@ def _400_train_predict(seed=CONST.SEED):
     trn = pd.read_feather(trn_path)
     tst = pd.read_feather(tst_path)
 
-    score, preds = lgb_n_fold_cv_random_gs(trn, params, tst, seed=seed)
+    score, preds = lgb_cv_id_fold(trn, params=params, tst=tst, seed=seed)
 
     return score, preds
 
@@ -46,9 +48,7 @@ def _402_seed_average_weight1(loops=10):
         seed = CONST.SEED + i
         score, preds = _400_train_predict(seed)
         scores.append(score)
-        _sbmt = preds[preds.Weight == 1].groupby('Engine')[
-            [c for c in preds.columns if 'fold' in c]
-        ].mean().mean(axis=1).to_frame(f'sbmt{i}')
+        _sbmt = preds.mean(axis=1).to_frame(f'sbmt{i}')
         sbmts = pd.concat([sbmts, _sbmt], axis=1)
 
     utils.update_result(func_name, np.mean(score))
