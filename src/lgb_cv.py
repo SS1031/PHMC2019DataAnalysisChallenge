@@ -95,7 +95,7 @@ def lgb_cv_id_fold(trn, params, tst=None, seed=CONST.SEED, imp_plot=False):
 
     cv_id = utils.get_cv_id(seed)
     trn = trn.merge(cv_id, on=['Engine'], how='left')
-    assert trn.notnull().all().all()
+    assert trn.cv_id.notnull().all()
 
     valid_preds = pd.DataFrame({'preds': [np.nan] * trn.shape[0], 'actual_RUL': trn.RUL})
     le = preprocessing.LabelEncoder()
