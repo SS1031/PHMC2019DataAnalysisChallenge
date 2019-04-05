@@ -1,0 +1,7 @@
+{
+  "debug": false,
+  "seed": 42,
+  "_100_feature_set": "comprehensive",
+  "_100_feature_func": "SimpleSplit",
+  "_200_selection": ["drop_zero_variance", "select_150_by_f_regression"]
+}
