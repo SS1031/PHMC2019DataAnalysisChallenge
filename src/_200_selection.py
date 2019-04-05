@@ -245,25 +245,27 @@ def _207_select_150_by_f_regression(in_trn_path, in_tst_path,
     tst = pd.read_feather(in_tst_path)
 
     # impute
-    tmp_trn = trn.fillna(trn.median())
-    tmp_tst = tst.fillna(tst.median())
-
-    features = [c for c in trn.columns if c not in CONST.EX_COLS]
+    import numpy as np
+    trn = trn.replace([np.inf, -np.inf], np.nan)
+    tmp_trn = trn.fillna(trn.median()).dropna(axis=1, how='any')
+    features = [c for c in tmp_trn.columns if c not in CONST.EX_COLS]
 
     # Create and fit selector
     selector = SelectKBest(f_regression, k=150)
-    selector.fit(tmp_trn[features], tmp_trn['RUL'])
+    print(tmp_trn.isnull().any().any())
+    selector.fit(tmp_trn[features].values, trn['RUL'].values)
 
     # Get columns to keep
     mask = selector.get_support(indices=True)
-    cols = trn.columns[mask].tolist()
+    cols = tmp_trn[features].columns[mask].tolist()
+
     new_trn = trn[['Engine', 'RUL'] + cols]
     new_tst = tst[['Engine'] + cols]
 
-    # trn_dataset.to_feather(out_trn_path)
-    # tst_dataset.to_feather(out_tst_path)
+    new_trn.to_feather(out_trn_path)
+    new_tst.to_feather(out_tst_path)
 
-    return new_trn, new_tst
+    return out_trn_path, out_tst_path
 
 
 mapper = {
@@ -285,6 +287,6 @@ def _200_selection():
 
 
 if __name__ == '__main__':
-    # trn_path, tst_path = _100_feature()
+    trn_path, tst_path = _100_feature()
     # trn_path, tst_path = _201_drop_zero_variance(trn_path, tst_path)
-    trn, tst = _200_selection()
+    trn_path, tst_path = _200_selection()

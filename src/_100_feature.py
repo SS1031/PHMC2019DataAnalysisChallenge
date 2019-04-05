@@ -79,7 +79,7 @@ def _101_simple_split(in_trn_path, in_tst_path,
     tst_base = pd.read_csv(in_tst_path)
 
     if get_config()['debug']:
-        split_no_list = list(range(20, 350, 100))
+        split_no_list = list(range(20, 350, 150))
     else:
         # 2019-04-02 テストデータのFlightNo maxを元としてデータを作成
         split_no_list = tst_base.groupby('Engine').FlightNo.max().values.tolist()
