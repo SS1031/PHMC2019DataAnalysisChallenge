@@ -7,6 +7,7 @@ import seaborn as sns
 
 from sklearn import preprocessing
 from sklearn.model_selection import GroupShuffleSplit
+from sklearn.feature_selection import SelectKBest, f_regression
 
 import CONST
 from _100_feature import _100_feature
@@ -201,11 +202,77 @@ def _205_lgb_top_200(in_trn_path, in_tst_path,
     return out_trn_path, out_tst_path
 
 
+def _206_lgb_top_150(in_trn_path, in_tst_path,
+                     out_trn_path=os.path.join(CONST.PIPE200, '_206_trn_{}.f'),
+                     out_tst_path=os.path.join(CONST.PIPE200, '_206_tst_{}.f')):
+    _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
+    out_trn_path = out_trn_path.format(_hash)
+    out_tst_path = out_tst_path.format(_hash)
+    if get_config()['debug']:
+        out_trn_path += '.debug'
+    out_tst_path += '.debug'
+    if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
+        return out_trn_path, out_tst_path
+
+    trn_dataset = pd.read_feather(in_trn_path)
+    tst_dataset = pd.read_feather(in_tst_path)
+
+    le = preprocessing.LabelEncoder()
+    trn_dataset['EncodedEngine'] = le.fit_transform(trn_dataset['Engine'])
+
+    trn_dataset, tst_dataset = _202_lgb_top_x(trn_dataset, tst_dataset, k=150)
+
+    trn_dataset.to_feather(out_trn_path)
+    tst_dataset.to_feather(out_tst_path)
+
+    return out_trn_path, out_tst_path
+
+
+def _207_select_150_by_f_regression(in_trn_path, in_tst_path,
+                                    out_trn_path=os.path.join(CONST.PIPE200, '_207_trn_{}.f'),
+                                    out_tst_path=os.path.join(CONST.PIPE200, '_207_tst_{}.f')):
+    _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
+    out_trn_path = out_trn_path.format(_hash)
+    out_tst_path = out_tst_path.format(_hash)
+
+    if get_config()['debug']:
+        out_trn_path += '.debug'
+    out_tst_path += '.debug'
+    if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
+        return out_trn_path, out_tst_path
+
+    trn = pd.read_feather(in_trn_path)
+    tst = pd.read_feather(in_tst_path)
+
+    # impute
+    tmp_trn = trn.fillna(trn.median())
+    tmp_tst = tst.fillna(tst.median())
+
+    features = [c for c in trn.columns if c not in CONST.EX_COLS]
+
+    # Create and fit selector
+    selector = SelectKBest(f_regression, k=150)
+    selector.fit(tmp_trn[features], tmp_trn['RUL'])
+
+    # Get columns to keep
+    mask = selector.get_support(indices=True)
+    cols = trn.columns[mask].tolist()
+    new_trn = trn[['Engine', 'RUL'] + cols]
+    new_tst = tst[['Engine'] + cols]
+
+    # trn_dataset.to_feather(out_trn_path)
+    # tst_dataset.to_feather(out_tst_path)
+
+    return new_trn, new_tst
+
+
 mapper = {
     "drop_zero_variance": _201_drop_zero_variance,
     "lgb_top_100": _203_lgb_top_100,
     "lgb_top_500": _204_lgb_top_500,
     "lgb_top_200": _205_lgb_top_200,
+    "lgb_top_150": _206_lgb_top_150,
+    "select_150_by_f_regression": _207_select_150_by_f_regression,
 }
 
 
@@ -218,5 +285,6 @@ def _200_selection():
 
 
 if __name__ == '__main__':
-    trn_path, tst_path = _100_feature()
-    trn_path, tst_path = _201_drop_zero_variance(trn_path, tst_path)
+    # trn_path, tst_path = _100_feature()
+    # trn_path, tst_path = _201_drop_zero_variance(trn_path, tst_path)
+    trn, tst = _200_selection()
