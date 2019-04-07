@@ -1,4 +1,4 @@
-config,pred_func_name,exec time,score
+config,pred_func_name,exec time,score,output_file
 config003,_402_seed_average_weight1,2019-03-31T14:13:28,27.63412247944032
 config003,_402_seed_average_weight1,2019-04-01T00:01:51,27.63412247944032
 config004,_402_seed_average_weight1,2019-04-01T02:02:02,24.583776865191805
@@ -13,3 +13,4 @@ config012,_402_seed_average_weight1,2019-04-05T02:10:12,24.600721750742842
 config013,_402_seed_average_weight1,2019-04-05T04:29:13,32.23089799486417
 config014,_402_seed_average_weight1,2019-04-07T14:22:17,30.586226327878872
 config014,_402_seed_average_weight1,2019-04-07T16:50:00,30.65685726799203
+config015,_402_seed_average_weight1,2019-04-07T20:19:32,24.582830879405414

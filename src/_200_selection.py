@@ -68,10 +68,10 @@ def _202_drop_all_nan(in_trn_path, in_tst_path,
     trn = trn.replace([np.inf, -np.inf], np.nan)
     all_nan_columns = trn.columns[trn.isnull().all()].tolist()
 
-    print("Before drop features,", trn.shape)
+    print("Before drop all nan features,", trn.shape)
     trn = trn.drop(columns=all_nan_columns)
     tst = tst.drop(columns=all_nan_columns)
-    print("After drop features,", trn.shape)
+    print("After drop all nan features,", trn.shape)
 
     trn.to_feather(out_trn_path)
     tst.to_feather(out_tst_path)

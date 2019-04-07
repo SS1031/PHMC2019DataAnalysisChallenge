@@ -33,15 +33,16 @@ def _401_predict_weight1():
     ].mean().mean(axis=1).to_frame('Predicted RUL').reset_index()
     assert_engine = np.array(['Test' + str(i).zfill(3) for i in range(1, 101)]).astype(object)
     assert (sbmt['Engine'].values == assert_engine).all()
-    utils.update_result(func_name, score)
-
     output_path = os.path.join(CONST.PIPE400, f'{func_name}_{utils.get_config_name()}.csv')
+    utils.update_result(func_name, score, output_path)
+
     sbmt[['Predicted RUL']].to_csv(output_path, index=False)
     return sbmt
 
 
-def _402_seed_average_weight1(loops=10):
-    func_name = '_402_seed_average_weight1'
+def _402_seed_average(loops=10):
+    func_name = '_402_seed_average'
+    output_path = os.path.join(CONST.PIPE400, f'{func_name}_{utils.get_config_name()}.csv')
     scores = []
     sbmts = pd.DataFrame()
     for i in range(1, loops):
@@ -51,9 +52,8 @@ def _402_seed_average_weight1(loops=10):
         _sbmt = preds.mean(axis=1).to_frame(f'sbmt{i}')
         sbmts = pd.concat([sbmts, _sbmt], axis=1)
 
-    utils.update_result(func_name, np.mean(score))
+    utils.update_result(func_name, np.mean(score), output_path)
     sbmt = sbmts.mean(axis=1).to_frame('Predicted RUL').reset_index()
-    output_path = os.path.join(CONST.PIPE400, f'{func_name}_{utils.get_config_name()}.csv')
     sbmt[['Predicted RUL']].to_csv(output_path, index=False)
 
     return sbmts
@@ -71,7 +71,7 @@ def _403_predict_weighted_average():
 
 
 if __name__ == '__main__':
-    preds = _402_seed_average_weight1()
+    preds = _402_seed_average()
     # preds = _403_predict_weighted_average()
     # for col in [c for c in preds.columns if 'fold' in c]:
     #     preds[col] = preds[col] - preds['DiffFlightNo']
