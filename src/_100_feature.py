@@ -22,11 +22,10 @@ feature_set_mapper = {
     "minimal": MinimalFCParameters,
 }
 
-fc_parameter = feature_set_mapper[get_config()['_100_feature_set']]()
-feature_func = get_config()['_100_feature_func']
+fc_parameter = feature_set_mapper[get_config()['_100_feature']['set']]()
+feature_func = get_config()['_100_feature']['func']
 
-CONST.PIPE100 = CONST.PIPE100.format(fc_parameter.__class__.__name__,
-                                     get_config()['_100_feature_func'])
+CONST.PIPE100 = CONST.PIPE100.format(fc_parameter.__class__.__name__, feature_func)
 
 if not os.path.exists(CONST.PIPE100):
     os.makedirs(CONST.PIPE100)

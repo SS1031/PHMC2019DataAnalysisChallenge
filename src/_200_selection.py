@@ -1,5 +1,6 @@
 import os
 import hashlib
+import numpy as np
 import pandas as pd
 import lightgbm as lgb
 import matplotlib.pyplot as plt
@@ -14,15 +15,14 @@ from _100_feature import _100_feature
 from utils import get_config
 from utils import get_config_name
 
-selections = get_config()['_200_selection']
-CONST.PIPE200 = CONST.PIPE200.format("-".join(selections))
+CONST.PIPE200 = CONST.PIPE200.format("-".join(str(e) for e in sum(get_config()['_200_selection'], [])))
 if not os.path.exists(CONST.PIPE200):
     os.makedirs(CONST.PIPE200)
 
 
 def _201_drop_zero_variance(in_trn_path, in_tst_path,
                             out_trn_path=os.path.join(CONST.PIPE200, '_201_trn_{}.f'),
-                            out_tst_path=os.path.join(CONST.PIPE200, '_201_tst_{}.f'), ):
+                            out_tst_path=os.path.join(CONST.PIPE200, '_201_tst_{}.f')):
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
     out_trn_path = out_trn_path.format(_hash)
     out_tst_path = out_tst_path.format(_hash)
@@ -49,7 +49,57 @@ def _201_drop_zero_variance(in_trn_path, in_tst_path,
     return out_trn_path, out_tst_path
 
 
-def _202_lgb_top_x(trn, tst, k):
+def _202_drop_all_nan(in_trn_path, in_tst_path,
+                      out_trn_path=os.path.join(CONST.PIPE200, '_201_trn_{}.f'),
+                      out_tst_path=os.path.join(CONST.PIPE200, '_201_tst_{}.f')):
+    _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
+    out_trn_path = out_trn_path.format(_hash)
+    out_tst_path = out_tst_path.format(_hash)
+    if get_config()['debug']:
+        out_trn_path += '.debug'
+        out_tst_path += '.debug'
+    if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
+        return out_trn_path, out_tst_path
+
+    trn = pd.read_feather(in_trn_path)
+    tst = pd.read_feather(in_tst_path)
+
+    # Delete all null columns
+    trn = trn.replace([np.inf, -np.inf], np.nan)
+    all_nan_columns = trn.columns[trn.isnull().all()].tolist()
+
+    print("Before drop features,", trn.shape)
+    trn = trn.drop(columns=all_nan_columns)
+    tst = tst.drop(columns=all_nan_columns)
+    print("After drop features,", trn.shape)
+
+    trn.to_feather(out_trn_path)
+    tst.to_feather(out_tst_path)
+
+    return out_trn_path, out_tst_path
+
+
+def _203_lgb_top_k(in_trn_path, in_tst_path, k,
+                   out_trn_path=os.path.join(CONST.PIPE200, '_203_trn_{}.f'),
+                   out_tst_path=os.path.join(CONST.PIPE200, '_203_tst_{}.f')):
+    _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
+
+    out_trn_path = out_trn_path.format(_hash)
+    out_tst_path = out_tst_path.format(_hash)
+
+    if get_config()['debug']:
+        out_trn_path += '.debug'
+        out_tst_path += '.debug'
+
+    if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
+        return out_trn_path, out_tst_path
+
+    trn = pd.read_feather(in_trn_path)
+    tst = pd.read_feather(in_tst_path)
+
+    le = preprocessing.LabelEncoder()
+    trn['EncodedEngine'] = le.fit_transform(trn['Engine'])
+
     gsp = GroupShuffleSplit(n_splits=8, random_state=CONST.SEED)
     features = [c for c in trn.columns if c not in CONST.EX_COLS]
     feature_importance_df = pd.DataFrame()
@@ -116,121 +166,20 @@ def _202_lgb_top_x(trn, tst, k):
     # drop_cols = mean_feature_importance[mean_feature_importance == 0].dropna().index.values
     drop_cols = mean_feature_importance[k:].index.values
 
-    print("Before drop features,", trn.shape)
+    print("Before drop lgbm selection features,", trn.shape)
     trn = trn.drop(columns=drop_cols)
     tst = tst.drop(columns=drop_cols)
-    print("After drop features,", trn.shape)
+    print("After drop lgb_selection features,", trn.shape)
 
-    return trn, tst
-
-
-def _203_lgb_top_100(in_trn_path, in_tst_path,
-                     out_trn_path=os.path.join(CONST.PIPE200, '_203_trn_{}.f'),
-                     out_tst_path=os.path.join(CONST.PIPE200, '_203_tst_{}.f')):
-    _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
-    out_trn_path = out_trn_path.format(_hash)
-    out_tst_path = out_tst_path.format(_hash)
-    if get_config()['debug']:
-        out_trn_path += '.debug'
-        out_tst_path += '.debug'
-    if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
-        return out_trn_path, out_tst_path
-
-    trn_dataset = pd.read_feather(in_trn_path)
-    tst_dataset = pd.read_feather(in_tst_path)
-
-    le = preprocessing.LabelEncoder()
-    trn_dataset['EncodedEngine'] = le.fit_transform(trn_dataset['Engine'])
-
-    trn_dataset, tst_dataset = _202_lgb_top_x(trn_dataset, tst_dataset, k=100)
-
-    trn_dataset.to_feather(out_trn_path)
-    tst_dataset.to_feather(out_tst_path)
+    trn.to_feather(out_trn_path)
+    tst.to_feather(out_tst_path)
 
     return out_trn_path, out_tst_path
 
 
-def _204_lgb_top_500(in_trn_path, in_tst_path,
-                     out_trn_path=os.path.join(CONST.PIPE200, '_204_trn_{}.f'),
-                     out_tst_path=os.path.join(CONST.PIPE200, '_204_tst_{}.f')):
-    _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
-    out_trn_path = out_trn_path.format(_hash)
-    out_tst_path = out_tst_path.format(_hash)
-    if get_config()['debug']:
-        out_trn_path += '.debug'
-    out_tst_path += '.debug'
-    if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
-        return out_trn_path, out_tst_path
-
-    trn_dataset = pd.read_feather(in_trn_path)
-    tst_dataset = pd.read_feather(in_tst_path)
-
-    le = preprocessing.LabelEncoder()
-    trn_dataset['EncodedEngine'] = le.fit_transform(trn_dataset['Engine'])
-
-    trn_dataset, tst_dataset = _202_lgb_top_x(trn_dataset, tst_dataset, k=500)
-
-    trn_dataset.to_feather(out_trn_path)
-    tst_dataset.to_feather(out_tst_path)
-
-    return out_trn_path, out_tst_path
-
-
-def _205_lgb_top_200(in_trn_path, in_tst_path,
-                     out_trn_path=os.path.join(CONST.PIPE200, '_205_trn_{}.f'),
-                     out_tst_path=os.path.join(CONST.PIPE200, '_205_tst_{}.f')):
-    _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
-    out_trn_path = out_trn_path.format(_hash)
-    out_tst_path = out_tst_path.format(_hash)
-    if get_config()['debug']:
-        out_trn_path += '.debug'
-    out_tst_path += '.debug'
-    if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
-        return out_trn_path, out_tst_path
-
-    trn_dataset = pd.read_feather(in_trn_path)
-    tst_dataset = pd.read_feather(in_tst_path)
-
-    le = preprocessing.LabelEncoder()
-    trn_dataset['EncodedEngine'] = le.fit_transform(trn_dataset['Engine'])
-
-    trn_dataset, tst_dataset = _202_lgb_top_x(trn_dataset, tst_dataset, k=200)
-
-    trn_dataset.to_feather(out_trn_path)
-    tst_dataset.to_feather(out_tst_path)
-
-    return out_trn_path, out_tst_path
-
-
-def _206_lgb_top_150(in_trn_path, in_tst_path,
-                     out_trn_path=os.path.join(CONST.PIPE200, '_206_trn_{}.f'),
-                     out_tst_path=os.path.join(CONST.PIPE200, '_206_tst_{}.f')):
-    _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
-    out_trn_path = out_trn_path.format(_hash)
-    out_tst_path = out_tst_path.format(_hash)
-    if get_config()['debug']:
-        out_trn_path += '.debug'
-    out_tst_path += '.debug'
-    if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
-        return out_trn_path, out_tst_path
-
-    trn_dataset = pd.read_feather(in_trn_path)
-    tst_dataset = pd.read_feather(in_tst_path)
-
-    le = preprocessing.LabelEncoder()
-    trn_dataset['EncodedEngine'] = le.fit_transform(trn_dataset['Engine'])
-
-    trn_dataset, tst_dataset = _202_lgb_top_x(trn_dataset, tst_dataset, k=150)
-
-    trn_dataset.to_feather(out_trn_path)
-    tst_dataset.to_feather(out_tst_path)
-
-    return out_trn_path, out_tst_path
-
-
-def _207_select_150_by_f_regression(in_trn_path, in_tst_path,
-                                    out_trn_path=os.path.join(CONST.PIPE200, '_207_trn_{}.f'),
-                                    out_tst_path=os.path.join(CONST.PIPE200, '_207_tst_{}.f')):
+def _204_select_k_by_f_regression(in_trn_path, in_tst_path, k,
+                                  out_trn_path=os.path.join(CONST.PIPE200, '_207_trn_{}.f'),
+                                  out_tst_path=os.path.join(CONST.PIPE200, '_207_tst_{}.f')):
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
     out_trn_path = out_trn_path.format(_hash)
     out_tst_path = out_tst_path.format(_hash)
@@ -245,44 +194,44 @@ def _207_select_150_by_f_regression(in_trn_path, in_tst_path,
     tst = pd.read_feather(in_tst_path)
 
     # impute
-    import numpy as np
-    trn = trn.replace([np.inf, -np.inf], np.nan)
-    tmp_trn = trn.fillna(trn.median()).dropna(axis=1, how='any')
+    tmp_trn = trn.fillna(trn.median())
     features = [c for c in tmp_trn.columns if c not in CONST.EX_COLS]
 
     # Create and fit selector
-    selector = SelectKBest(f_regression, k=150)
-    print(tmp_trn.isnull().any().any())
+    selector = SelectKBest(f_regression, k=k)
     selector.fit(tmp_trn[features].values, trn['RUL'].values)
 
     # Get columns to keep
-    mask = selector.get_support(indices=True)
-    cols = tmp_trn[features].columns[mask].tolist()
+    mask = selector.get_support(indices=False)
+    drop_cols = tmp_trn[features].columns[~mask].tolist()
 
-    new_trn = trn[['Engine', 'RUL'] + cols]
-    new_tst = tst[['Engine'] + cols]
+    print("Before drop selection by f regression features,", trn.shape)
+    trn = trn.drop(columns=drop_cols)
+    tst = tst.drop(columns=drop_cols)
+    print("After drop selection by f regression features,", trn.shape)
 
-    new_trn.to_feather(out_trn_path)
-    new_tst.to_feather(out_tst_path)
+    trn.to_feather(out_trn_path)
+    tst.to_feather(out_tst_path)
 
     return out_trn_path, out_tst_path
 
 
 mapper = {
     "drop_zero_variance": _201_drop_zero_variance,
-    "lgb_top_100": _203_lgb_top_100,
-    "lgb_top_500": _204_lgb_top_500,
-    "lgb_top_200": _205_lgb_top_200,
-    "lgb_top_150": _206_lgb_top_150,
-    "select_150_by_f_regression": _207_select_150_by_f_regression,
+    "drop_all_nan": _202_drop_all_nan,
+    "lgb_top_k": _203_lgb_top_k,
+    "select_k_by_f_regression": _204_select_k_by_f_regression,
 }
 
 
 def _200_selection():
     trn_path, tst_path = _100_feature()
-    for selection in selections:
-        func_selection = mapper[selection]
-        trn_path, tst_path = func_selection(trn_path, tst_path)
+    for selection in get_config()['_200_selection']:
+        func_selection = mapper[selection[0]]
+        if len(selection) == 1:
+            trn_path, tst_path = func_selection(trn_path, tst_path)
+        else:
+            trn_path, tst_path = func_selection(trn_path, tst_path, *selection[1:])
     return trn_path, tst_path
 
 

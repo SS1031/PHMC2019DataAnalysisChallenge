@@ -1,0 +1,18 @@
+{
+  "debug": false,
+  "seed": 42,
+  "_100_feature": {
+    "set": "comprehensive",
+    "func": "SimpleSplit"
+  },
+  "_200_selection": [
+    ["drop_zero_variance"],
+    ["drop_all_nan"],
+    [
+      "select_k_by_f_regression", 5000
+    ],
+    [
+      "lgb_top_k", 100
+    ]
+  ]
+}
