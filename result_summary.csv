@@ -15,4 +15,5 @@ config014,_402_seed_average_weight1,2019-04-07T14:22:17,30.586226327878872,
 config014,_402_seed_average_weight1,2019-04-07T16:50:00,30.65685726799203,
 config014,_402_seed_average_weight1,2019-04-07T08:43:35,25.030078885182967,
 config015,_402_seed_average_weight1,2019-04-07T20:19:32,24.582830879405407,
-config015,_402_seed_average,2019-04-07T12:20:58,24.526075407338503,../data/output/_400_prediction/_402_seed_average_config015.csv
+config015,_402_seed_average,2019-04-07T12:20:58,24.526075407338507,../data/output/_400_prediction/_402_seed_average_config015.csv
+config016,_402_seed_average,2019-04-07T13:15:34,24.30827936028966,../data/output/_400_prediction/_402_seed_average_config016.csv
