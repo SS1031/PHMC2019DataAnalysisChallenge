@@ -4,6 +4,7 @@ data/output/*
 data/sandbox/*
 !data/output/_300_optimization/
 !data/output/_400_prediction/
+!data/output/imp/
 
 .DS_Store
 
