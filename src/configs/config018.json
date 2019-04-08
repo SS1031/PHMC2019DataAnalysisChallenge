@@ -1,5 +1,5 @@
 {
-  "debug": false,
+  "debug": true,
   "seed": 42,
   "_100_feature": {
     "set": "comprehensive",
