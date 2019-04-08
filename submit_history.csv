@@ -3,4 +3,4 @@ _402_seed_average_weight1_config003.csv,C0004_01_04_2019.csv,27.05200816,27.6341
 _402_seed_average_weight1_config006.csv,C0004_02_04_2019.csv,28.03167091537218,,t_no_listをテストデータから+list(range(10, 350, 100))でデータセット作成
 _402_seed_average_weight1_config007.csv,C0004_03_04_2019.csv,24.47170566662562,18.30587718,comprehensive特徴セット
 _402_seed_average_weight1_config011.csv,C0004_04_04_2019.csv,24.295964443317946,17.72529408,comprehensive特徴セット+cv_idによるCV
-_402_seed_average_config017.csv,C0004_07_04_2019.csv,24.23497573103964,,RegimeSplit-MinimalFeatureSet
+_402_seed_average_config017.csv,C0004_07_04_2019.csv,24.23497573103964,17.24352811,RegimeSplit-MinimalFeatureSet
