@@ -1,0 +1,15 @@
+{
+  "debug": false,
+  "seed": 42,
+  "_100_feature": {
+    "set": "comprehensive",
+    "func": "RegimeSplit"
+  },
+  "_200_selection": [
+    ["drop_zero_variance"],
+    ["drop_all_nan"],
+    [
+      "lgb_top_k", 100
+    ]
+  ]
+}
