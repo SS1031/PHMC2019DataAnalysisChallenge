@@ -52,5 +52,32 @@ def _000_preprocess():
     return trn_path, tst_path
 
 
-if __name__ == '__main__':
+def _001_preprocess():
+    out_trn_path = os.path.join(CONST.PIPE000, f'_001_trn_base.csv')
+    out_tst_path = os.path.join(CONST.PIPE000, f'_001_tst_base.csv')
+
+    if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
+        return out_trn_path, out_tst_path
+
     trn_path, tst_path = _000_preprocess()
+
+    trn = pd.read_csv(trn_path)
+    tst = pd.read_csv(tst_path)
+
+    useless_cols = ["PowerSettingTra",
+                    "TTotalTemperatureAtFanInletR",
+                    "PPressureAtFanInletPsia",
+                    "NfDmdDemandedFanSpeedRpm",
+                    "PcnfrDmdDemandedCorrectedFanSpeedRpm"]
+
+    trn.drop(columns=useless_cols, inplace=True)
+    tst.drop(columns=useless_cols, inplace=True)
+
+    trn.to_csv(out_trn_path, index=False)
+    tst.to_csv(out_tst_path, index=False)
+
+    return out_trn_path, out_trn_path
+
+
+if __name__ == '__main__':
+    trn_path, tst_path = _001_preprocess()
