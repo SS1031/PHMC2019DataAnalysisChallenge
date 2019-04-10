@@ -9,7 +9,7 @@
     ["drop_zero_variance"],
     ["drop_all_nan"],
     [
-      "lgb_top_k", 80
+      "lgb_top_k", 100
     ]
   ]
 }
