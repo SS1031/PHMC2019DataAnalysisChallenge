@@ -1,8 +1,8 @@
 {
-  "debug": true,
+  "debug": false,
   "seed": 42,
   "_100_feature": {
-    "set": "minimal",
+    "set": "comprehensive",
     "func": "LGBMSelectedRegimeSplit"
   },
   "_200_selection": [

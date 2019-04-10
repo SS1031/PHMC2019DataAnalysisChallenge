@@ -6,6 +6,9 @@ import lightgbm as lgb
 from sklearn.model_selection import GroupShuffleSplit
 from tsfresh import extract_features
 from tqdm import tqdm
+import re
+import pickle
+from tsfresh.feature_extraction.settings import from_columns
 from tsfresh.feature_extraction import ComprehensiveFCParameters
 from tsfresh.feature_extraction import EfficientFCParameters
 from tsfresh.feature_extraction import MinimalFCParameters
@@ -101,7 +104,8 @@ def create_split_regime_dataset(base_df, split_no_list=[], istest=False, kind_to
                                                              default_fc_parameters=fc_parameter)
 
             regime_extracted_features = regime_extracted_features.add_suffix(f'_Regime{regime}')
-            regime_dataset = pd.concat([regime_dataset, regime_extracted_features], axis=1, sort=True)
+            regime_dataset = pd.concat([regime_dataset, regime_extracted_features], axis=1,
+                                       sort=True)
 
         regime_dataset = pd.concat([
             regime_dataset,
@@ -134,7 +138,8 @@ def create_split_regime_dataset(base_df, split_no_list=[], istest=False, kind_to
                                                              default_fc_parameters=fc_parameter)
 
             regime_extracted_features = regime_extracted_features.add_suffix(f'_Regime{regime}')
-            regime_dataset = pd.concat([regime_dataset, regime_extracted_features], axis=1, sort=True)
+            regime_dataset = pd.concat([regime_dataset, regime_extracted_features], axis=1,
+                                       sort=True)
 
         regime_dataset = pd.concat([
             regime_dataset,
@@ -229,10 +234,10 @@ def _103_lgbm_selected_regime_split(in_trn_path, in_tst_path,
         return out_trn_path, out_tst_path
 
     ###
-    # 最初にデータ選択用のdebugデータセット作成する
+    # 最初にデータ選択用データセット作成する
     ###
-    out_trn_path += '.debug'
-    out_tst_path += '.debug'
+    selection_out_trn_path = os.path.join(CONST.PIPE100, 'for_lgbm_selection_trn.f')
+    selection_out_tst_path = os.path.join(CONST.PIPE100, 'for_lgbm_selection_tst.f')
     split_no_list = list(range(20, 350, 150))
 
     trn_base = pd.read_csv(in_trn_path)
@@ -249,35 +254,50 @@ def _103_lgbm_selected_regime_split(in_trn_path, in_tst_path,
     assert (set([c for c in trn.columns if c not in CONST.EX_COLS]) ==
             set([c for c in tst.columns if c not in CONST.EX_COLS]))
 
-    trn.to_feather(out_trn_path)
-    tst.to_feather(out_tst_path)
-    ###
-    # 選択用のdebugデータセットここまで
-    ###
+    trn.to_feather(selection_out_trn_path)
+    tst.to_feather(selection_out_tst_path)
 
     ###
     # データ選択 K=1500
     ###
     from _200_selection import _203_lgb_top_k
-    from tsfresh.feature_extraction.settings import from_columns
-    import re
+    K = 2000
     selected_trn_path, selected_tst_path = _203_lgb_top_k(
-        out_trn_path, out_tst_path, 400,
-        out_trn_path=os.path.join(CONST.PIPE100, 'selected_trn.f.debug'),
-        out_tst_path=os.path.join(CONST.PIPE100, 'selected_tst.f.debug')
+        selection_out_trn_path, selection_out_tst_path, K,
+        out_trn_path=os.path.join(CONST.PIPE100, 'selected_trn.f'),
+        out_tst_path=os.path.join(CONST.PIPE100, 'selected_tst.f')
     )
     selected_trn = pd.read_feather(selected_trn_path)
-    feature_setting = from_columns(
-        [re.sub(r'_Regime[1-9]', '', col) for col in selected_trn.columns if
-         col not in CONST.EX_COLS + ['CurrentFlightNo']]
-    )
-    print([re.sub(r'_Regime[1-9]', '', col) for col in selected_trn.columns if
-           col not in CONST.EX_COLS + ['CurrentFlightNo']])
+    print("Selected Train dataset size =", selected_trn.shape)
+    feat_list = [re.sub(r'_Regime[1-9]', '', col) for col in selected_trn.columns if
+                 col not in CONST.EX_COLS + ['CurrentFlightNo']]
+    print("Calculation feature num =", len(list(set(feat_list))))
+    feature_setting = from_columns(list(set(feat_list)))
 
-    print(feature_setting)
+    out_feature_setting_path = os.path.join(CONST.PIPE100, f'feature_setting_top{K}.pkl')
+    with open(out_feature_setting_path, 'wb') as f:
+        pickle.dump(feature_setting, f)
 
+    ###
+    # 選択された特徴量で本番特徴量作成
+    ###
+    split_no_list = tst_base.groupby('Engine').FlightNo.max().values.tolist()
+    split_no_list += list(range(20, 350, 5))
+    split_no_list = list(set(split_no_list))
+    trn = create_split_regime_dataset(trn_base, split_no_list,
+                                      kind_to_fc_parameters=feature_setting)
+    tst = create_split_regime_dataset(tst_base, istest=True,
+                                      kind_to_fc_parameters=feature_setting)
 
-    return selected_trn
+    print("Train dataset size =", trn.shape)
+    print("Test dataset size =", tst.shape)
+    assert (set([c for c in trn.columns if c not in CONST.EX_COLS]) ==
+            set([c for c in tst.columns if c not in CONST.EX_COLS]))
+
+    trn.to_feather(out_trn_path)
+    tst.to_feather(out_tst_path)
+
+    return out_trn_path, out_tst_path
 
 
 func_mapper = {
@@ -294,6 +314,6 @@ def _100_feature():
 
 
 if __name__ == '__main__':
-    # trn_dataset_path, tst_dataset_path = _100_feature()
-    trn_base_path, tst_base_path = _001_preprocess()
-    trn = func_mapper[feature_func](trn_base_path, tst_base_path)
+    trn_dataset_path, tst_dataset_path = _100_feature()
+    # trn_base_path, tst_base_path = _001_preprocess()
+    # trn_path, tst_path = func_mapper[feature_func](trn_base_path, tst_base_path)
