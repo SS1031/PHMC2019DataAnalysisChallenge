@@ -231,7 +231,7 @@ def _103_lgbm_selected_regime_split(in_trn_path, in_tst_path,
     if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
         return out_trn_path, out_tst_path
 
-    K = 2000
+    K = 1500
     out_feature_setting_path = os.path.join(CONST.PIPE100, f'feature_setting_top{K}.pkl')
 
     trn_base = pd.read_csv(in_trn_path)
@@ -263,7 +263,7 @@ def _103_lgbm_selected_regime_split(in_trn_path, in_tst_path,
         tst.to_feather(selection_out_tst_path)
 
         ###
-        # データ選択 K=1500
+        # データ選択
         ###
         from _200_selection import _203_lgb_top_k
         selected_trn_path, selected_tst_path = _203_lgb_top_k(
@@ -285,10 +285,9 @@ def _103_lgbm_selected_regime_split(in_trn_path, in_tst_path,
         with open(out_feature_setting_path, 'wb') as f:
             pickle.dump(feature_setting, f)
 
+    # split_no_list = list(range(20, 350, 30))
     # 2019-04-02 テストデータのFlightNo maxを元としてデータを作成
-    split_no_list = tst_base.groupby('Engine').FlightNo.max().values.tolist()
-    split_no_list += list(range(20, 350, 5))
-    split_no_list = list(set(split_no_list))
+    split_no_list = list(set(tst_base.groupby('Engine').FlightNo.max().values.tolist()))
 
     trn = create_split_regime_dataset(trn_base, split_no_list,
                                       kind_to_fc_parameters=feature_setting)
