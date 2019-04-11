@@ -15,17 +15,18 @@ from _100_feature import _100_feature
 from utils import get_config
 from utils import get_config_name
 
-CONST.PIPE200 = CONST.PIPE200.format("-".join(str(e) for e in sum(get_config()['_200_selection'], [])))
+CONST.PIPE200 = CONST.PIPE200.format(
+    "-".join(str(e) for e in sum(get_config()['_200_selection'], [])))
 if not os.path.exists(CONST.PIPE200):
     os.makedirs(CONST.PIPE200)
 
 
 def _201_drop_zero_variance(in_trn_path, in_tst_path,
-                            out_trn_path=os.path.join(CONST.PIPE200, '_201_trn_{}.f'),
-                            out_tst_path=os.path.join(CONST.PIPE200, '_201_tst_{}.f')):
+                            out_trn_path=os.path.join(CONST.PIPE200, '_201_trn_{}_{}.f'),
+                            out_tst_path=os.path.join(CONST.PIPE200, '_201_tst_{}_{}.f')):
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
-    out_trn_path = out_trn_path.format(_hash)
-    out_tst_path = out_tst_path.format(_hash)
+    out_trn_path = out_trn_path.format(get_config_name(), _hash)
+    out_tst_path = out_tst_path.format(get_config_name(), _hash)
     if get_config()['debug']:
         out_trn_path += '.debug'
         out_tst_path += '.debug'
@@ -50,11 +51,11 @@ def _201_drop_zero_variance(in_trn_path, in_tst_path,
 
 
 def _202_drop_all_nan(in_trn_path, in_tst_path,
-                      out_trn_path=os.path.join(CONST.PIPE200, '_201_trn_{}.f'),
-                      out_tst_path=os.path.join(CONST.PIPE200, '_201_tst_{}.f')):
+                      out_trn_path=os.path.join(CONST.PIPE200, '_201_trn_{}_{}.f'),
+                      out_tst_path=os.path.join(CONST.PIPE200, '_201_tst_{}_{}.f')):
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
-    out_trn_path = out_trn_path.format(_hash)
-    out_tst_path = out_tst_path.format(_hash)
+    out_trn_path = out_trn_path.format(get_config_name(), _hash)
+    out_tst_path = out_tst_path.format(get_config_name(), _hash)
     if get_config()['debug']:
         out_trn_path += '.debug'
         out_tst_path += '.debug'
@@ -80,12 +81,12 @@ def _202_drop_all_nan(in_trn_path, in_tst_path,
 
 
 def _203_lgb_top_k(in_trn_path, in_tst_path, k,
-                   out_trn_path=os.path.join(CONST.PIPE200, '_203_trn_{}.f'),
-                   out_tst_path=os.path.join(CONST.PIPE200, '_203_tst_{}.f')):
+                   out_trn_path=os.path.join(CONST.PIPE200, '_203_trn_{}_{}.f'),
+                   out_tst_path=os.path.join(CONST.PIPE200, '_203_tst_{}_{}.f')):
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
 
-    out_trn_path = out_trn_path.format(_hash)
-    out_tst_path = out_tst_path.format(_hash)
+    out_trn_path = out_trn_path.format(get_config_name(), _hash)
+    out_tst_path = out_tst_path.format(get_config_name(), _hash)
 
     if get_config()['debug']:
         out_trn_path += '.debug'
@@ -178,11 +179,11 @@ def _203_lgb_top_k(in_trn_path, in_tst_path, k,
 
 
 def _204_select_k_by_f_regression(in_trn_path, in_tst_path, k,
-                                  out_trn_path=os.path.join(CONST.PIPE200, '_207_trn_{}.f'),
-                                  out_tst_path=os.path.join(CONST.PIPE200, '_207_tst_{}.f')):
+                                  out_trn_path=os.path.join(CONST.PIPE200, '_207_trn_{}_{}.f'),
+                                  out_tst_path=os.path.join(CONST.PIPE200, '_207_tst_{}_{}.f')):
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
-    out_trn_path = out_trn_path.format(_hash)
-    out_tst_path = out_tst_path.format(_hash)
+    out_trn_path = out_trn_path.format(get_config_name(), _hash)
+    out_tst_path = out_tst_path.format(get_config_name(), _hash)
 
     if get_config()['debug']:
         out_trn_path += '.debug'
