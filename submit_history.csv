@@ -5,3 +5,4 @@ _402_seed_average_weight1_config007.csv,C0004_03_04_2019.csv,24.47170566662562,1
 _402_seed_average_weight1_config011.csv,C0004_04_04_2019.csv,24.295964443317946,17.72529408,comprehensive特徴セット+cv_idによるCV
 _402_seed_average_config017.csv,C0004_07_04_2019.csv,24.23497573103964,17.24352811,RegimeSplit-MinimalFeatureSet
 _402_seed_average_config018.csv,C0004_08_04_2019.csv,20.85646942955076,16.91138968,RegimeSplit-Comprehensive-debug
+_402_seed_average_config020.csv,C0004_11_04_2019.csv,21.458372146101357,,RegimeSplit-Comprehensive-FullDataset
