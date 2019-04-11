@@ -98,8 +98,6 @@ def lgb_cv_id_fold(trn, params, tst=None, seed=CONST.SEED, imp_plot=False):
     assert trn.cv_id.notnull().all()
 
     valid_preds = pd.DataFrame({'preds': [np.nan] * trn.shape[0], 'actual_RUL': trn.RUL})
-    le = preprocessing.LabelEncoder()
-    trn['EncodedEngine'] = le.fit_transform(trn['Engine'])
     features = [c for c in trn.columns if c not in CONST.EX_COLS]
 
     for i in list(range(1, 9)):
