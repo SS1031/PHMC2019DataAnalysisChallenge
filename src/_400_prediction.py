@@ -46,6 +46,7 @@ def _402_seed_average(loops=10):
     scores = []
     sbmts = pd.DataFrame()
     for i in range(1, loops):
+        print("Loop :", i)
         seed = CONST.SEED + i
         score, preds = _400_train_predict(seed)
         scores.append(score)

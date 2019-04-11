@@ -109,7 +109,7 @@ def _301_optimize_cv_id(out_path=os.path.join(CONST.PIPE300, 'cv_id_optimized_pa
     params['feature_fraction'] = study.best_params['feature_fraction']
     params['bagging_fraction'] = study.best_params['bagging_fraction']
     params['lambda_l1'] = study.best_params['lambda_l1']
-    params['learning_rate'] = 0.005
+    params['learning_rate'] = 0.01
     params['verbose'] = -1
 
     with open(out_path, 'w') as fp:

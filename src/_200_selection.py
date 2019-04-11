@@ -14,6 +14,7 @@ import CONST
 from _100_feature import _100_feature
 from utils import get_config
 from utils import get_config_name
+from utils import get_cv_id
 
 CONST.PIPE200 = CONST.PIPE200.format(
     "-".join(str(e) for e in sum(get_config()['_200_selection'], [])))
@@ -104,18 +105,22 @@ def _203_lgb_top_k(in_trn_path, in_tst_path, k,
     le = preprocessing.LabelEncoder()
     trn['EncodedEngine'] = le.fit_transform(trn['Engine'])
 
-    gsp = GroupShuffleSplit(n_splits=8, random_state=CONST.SEED)
+    cv_id = get_cv_id(CONST.SEED)
+    trn = trn.merge(cv_id, on=['Engine'], how='left')
+    assert trn.cv_id.notnull().all()
+
     features = [c for c in trn.columns if c not in CONST.EX_COLS]
     feature_importance_df = pd.DataFrame()
 
-    for ix, (train_index, valid_index) in enumerate(gsp.split(X=trn, groups=trn.EncodedEngine)):
-        print("Fold", ix + 1)
-        seed = CONST.SEED * ix
+    for i in list(range(1, 9)):
+        print("CV ID", i)
+        seed = CONST.SEED * i
 
-        X_train, y_train = trn.loc[train_index, features], trn.loc[
-            train_index, 'RUL']
-        X_valid, y_valid = trn.loc[valid_index, features], trn.loc[
-            valid_index, 'RUL']
+        X_train, y_train = trn.loc[trn.cv_id != i, features], trn.loc[trn.cv_id != i, 'RUL']
+        X_valid, y_valid = trn.loc[trn.cv_id == i, features], trn.loc[trn.cv_id == i, 'RUL']
+
+        d_train = lgb.Dataset(X_train, label=y_train, feature_name=features)
+        d_valid = lgb.Dataset(X_valid, label=y_valid, feature_name=features)
 
         d_train = lgb.Dataset(X_train, label=y_train, feature_name=features)
         d_valid = lgb.Dataset(X_valid, label=y_valid, feature_name=features)
@@ -124,7 +129,7 @@ def _203_lgb_top_k(in_trn_path, in_tst_path, k,
             "boosting_type": "gbdt",
             "objective": "regression",
             "metric": "mae",
-            "learning_rate": 0.005,
+            "learning_rate": 0.01,
             "verbose": 1,
             "bagging_seed": seed,
             "feature_fraction_seed": seed,
@@ -144,7 +149,7 @@ def _203_lgb_top_k(in_trn_path, in_tst_path, k,
         fold_importance_df = pd.DataFrame()
         fold_importance_df["feature"] = features
         fold_importance_df["importance"] = model.feature_importance()
-        fold_importance_df["fold"] = ix
+        fold_importance_df["fold"] = i
         feature_importance_df = pd.concat([feature_importance_df, fold_importance_df], axis=0)
 
     cols = (feature_importance_df[
@@ -220,7 +225,7 @@ def _204_select_k_by_f_regression(in_trn_path, in_tst_path, k,
     return out_trn_path, out_tst_path
 
 
-def _205_lasso_selection(in_trn_path, in_tst_path,
+def _205_lasso_selection(in_trn_path, in_tst_path, alpha=0.01,
                          out_trn_path=os.path.join(CONST.PIPE200, '_205_trn_{}_{}.f'),
                          out_tst_path=os.path.join(CONST.PIPE200, '_205_tst_{}_{}.f')):
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
@@ -236,7 +241,7 @@ def _205_lasso_selection(in_trn_path, in_tst_path,
 
     features = [c for c in trn.columns if c not in CONST.EX_COLS]
 
-    estimator = Lasso(alpha=0.01, normalize=True)
+    estimator = Lasso(alpha=alpha, normalize=True)
     featureSelection = SelectFromModel(estimator)
     featureSelection.fit(trn[features], trn['RUL'])
     drop_cols = trn[features].columns[~featureSelection.get_support(indices=False)].tolist()
@@ -247,7 +252,7 @@ def _205_lasso_selection(in_trn_path, in_tst_path,
     print("After drop selection by lasso regression,", trn.shape)
 
     trn.to_feather(out_trn_path)
-    trn.to_feather(out_tst_path)
+    tst.to_feather(out_tst_path)
 
     return out_trn_path, out_tst_path
 
@@ -257,6 +262,7 @@ mapper = {
     "drop_all_nan": _202_drop_all_nan,
     "lgb_top_k": _203_lgb_top_k,
     "select_k_by_f_regression": _204_select_k_by_f_regression,
+    "lasso": _205_lasso_selection,
 }
 
 

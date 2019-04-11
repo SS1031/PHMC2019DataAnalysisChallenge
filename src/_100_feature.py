@@ -205,9 +205,10 @@ def _102_regime_split(in_trn_path, in_tst_path,
         split_no_list = list(range(20, 350, 150))
     else:
         # 2019-04-02 テストデータのFlightNo maxを元としてデータを作成
-        split_no_list = tst_base.groupby('Engine').FlightNo.max().values.tolist()
-        split_no_list += list(range(20, 350, 5))
-        split_no_list = list(set(split_no_list))
+        # split_no_list = tst_base.groupby('Engine').FlightNo.max().values.tolist()
+        # split_no_list += list(range(20, 350, 5))
+        # split_no_list = list(set(split_no_list))
+        split_no_list = list(range(20, 350, 30))
 
     # 訓練データ作成
     trn = create_split_regime_dataset(trn_base, split_no_list)
@@ -289,9 +290,9 @@ def _103_lgbm_selected_regime_split(in_trn_path, in_tst_path,
         with open(out_feature_setting_path, 'wb') as f:
             pickle.dump(feature_setting, f)
 
-    # split_no_list = list(range(20, 350, 30))
     # 2019-04-02 テストデータのFlightNo maxを元としてデータを作成
-    split_no_list = list(set(tst_base.groupby('Engine').FlightNo.max().values.tolist()))
+    # split_no_list = list(set(tst_base.groupby('Engine').FlightNo.max().values.tolist()))
+    split_no_list = list(range(20, 350, 30))
 
     trn = create_split_regime_dataset(trn_base, split_no_list,
                                       kind_to_fc_parameters=feature_setting)
