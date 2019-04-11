@@ -51,8 +51,8 @@ def _201_drop_zero_variance(in_trn_path, in_tst_path,
 
 
 def _202_drop_all_nan(in_trn_path, in_tst_path,
-                      out_trn_path=os.path.join(CONST.PIPE200, '_201_trn_{}_{}.f'),
-                      out_tst_path=os.path.join(CONST.PIPE200, '_201_tst_{}_{}.f')):
+                      out_trn_path=os.path.join(CONST.PIPE200, '_202_trn_{}_{}.f'),
+                      out_tst_path=os.path.join(CONST.PIPE200, '_202_tst_{}_{}.f')):
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
     out_trn_path = out_trn_path.format(get_config_name(), _hash)
     out_tst_path = out_tst_path.format(get_config_name(), _hash)
@@ -83,6 +83,9 @@ def _202_drop_all_nan(in_trn_path, in_tst_path,
 def _203_lgb_top_k(in_trn_path, in_tst_path, k,
                    out_trn_path=os.path.join(CONST.PIPE200, '_203_trn_{}_{}.f'),
                    out_tst_path=os.path.join(CONST.PIPE200, '_203_tst_{}_{}.f')):
+    print("##############################")
+    print("_200_selection._203_lgb_top_k ")
+    print("####################k#########")
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
 
     out_trn_path = out_trn_path.format(get_config_name(), _hash)
@@ -179,8 +182,8 @@ def _203_lgb_top_k(in_trn_path, in_tst_path, k,
 
 
 def _204_select_k_by_f_regression(in_trn_path, in_tst_path, k,
-                                  out_trn_path=os.path.join(CONST.PIPE200, '_207_trn_{}_{}.f'),
-                                  out_tst_path=os.path.join(CONST.PIPE200, '_207_tst_{}_{}.f')):
+                                  out_trn_path=os.path.join(CONST.PIPE200, '_204_trn_{}_{}.f'),
+                                  out_tst_path=os.path.join(CONST.PIPE200, '_204_tst_{}_{}.f')):
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
     out_trn_path = out_trn_path.format(get_config_name(), _hash)
     out_tst_path = out_tst_path.format(get_config_name(), _hash)
@@ -213,6 +216,38 @@ def _204_select_k_by_f_regression(in_trn_path, in_tst_path, k,
 
     trn.to_feather(out_trn_path)
     tst.to_feather(out_tst_path)
+
+    return out_trn_path, out_tst_path
+
+
+def _205_lasso_selection(in_trn_path, in_tst_path,
+                         out_trn_path=os.path.join(CONST.PIPE200, '_205_trn_{}_{}.f'),
+                         out_tst_path=os.path.join(CONST.PIPE200, '_205_tst_{}_{}.f')):
+    _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
+    out_trn_path = out_trn_path.format(get_config_name(), _hash)
+    out_tst_path = out_tst_path.format(get_config_name(), _hash)
+
+    from sklearn.feature_selection import SelectFromModel
+    from sklearn.linear_model import Lasso
+
+    trn = pd.read_feather(in_trn_path)
+    tst = pd.read_feather(in_tst_path)
+    trn = trn.fillna(trn.median())
+
+    features = [c for c in trn.columns if c not in CONST.EX_COLS]
+
+    estimator = Lasso(alpha=0.01, normalize=True)
+    featureSelection = SelectFromModel(estimator)
+    featureSelection.fit(trn[features], trn['RUL'])
+    drop_cols = trn[features].columns[~featureSelection.get_support(indices=False)].tolist()
+
+    print("Before drop selection by lasso regression,", trn.shape)
+    trn = trn.drop(columns=drop_cols)
+    tst = tst.drop(columns=drop_cols)
+    print("After drop selection by lasso regression,", trn.shape)
+
+    trn.to_feather(out_trn_path)
+    trn.to_feather(out_tst_path)
 
     return out_trn_path, out_tst_path
 

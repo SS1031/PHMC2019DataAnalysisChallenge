@@ -237,15 +237,19 @@ def _103_lgbm_selected_regime_split(in_trn_path, in_tst_path,
     trn_base = pd.read_csv(in_trn_path)
     tst_base = pd.read_csv(in_tst_path)
 
-    if os.path.exists(out_feature_setting_path):
+    selection_out_trn_path = os.path.join(CONST.PIPE100, 'for_lgbm_selection_trn.f')
+    selection_out_tst_path = os.path.join(CONST.PIPE100, 'for_lgbm_selection_tst.f')
+
+    if (os.path.exists(out_feature_setting_path) and
+            os.path.exists(selection_out_trn_path) and
+            os.path.exists(selection_out_tst_path)):
+
         with open(out_feature_setting_path, 'rb') as fp:
             feature_setting = pickle.load(fp)
     else:
         ###
         # 最初にデータ選択用データセット作成する
         ###
-        selection_out_trn_path = os.path.join(CONST.PIPE100, 'for_lgbm_selection_trn.f')
-        selection_out_tst_path = os.path.join(CONST.PIPE100, 'for_lgbm_selection_tst.f')
         split_no_list = list(range(20, 350, 150))
 
         # 訓練データ作成
