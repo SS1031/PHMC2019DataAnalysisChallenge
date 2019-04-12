@@ -232,6 +232,9 @@ def _205_lasso_selection(in_trn_path, in_tst_path, alpha=0.01,
     out_trn_path = out_trn_path.format(get_config_name(), _hash)
     out_tst_path = out_tst_path.format(get_config_name(), _hash)
 
+    if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
+        return out_trn_path, out_tst_path
+
     from sklearn.feature_selection import SelectFromModel
     from sklearn.linear_model import Lasso
 
