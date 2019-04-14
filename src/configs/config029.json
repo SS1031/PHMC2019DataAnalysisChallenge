@@ -1,0 +1,15 @@
+{
+  "debug": false,
+  "seed": 42,
+  "_100_feature": {
+    "set": "minimal",
+    "type": ["all", "regime"],
+    "split": "same_as_test"
+  },
+  "_200_selection": [
+    ["drop_zero_variance"],
+    ["drop_all_nan"],
+    ["lasso", 0.008],
+    ["lgb_top_k", 100]
+  ]
+}
