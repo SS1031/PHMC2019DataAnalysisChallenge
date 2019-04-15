@@ -4,12 +4,12 @@
   "_100_feature": {
     "set": "comprehensive",
     "type": ["all", "regime"],
-    "split": "same_as_test"
+    "split": "medium"
   },
   "_200_selection": [
     ["drop_zero_variance"],
     ["drop_all_nan"],
     ["lasso", 0.008],
-    ["lgb_top_k", 200]
+    ["lgb_top_k", 300]
   ]
 }
