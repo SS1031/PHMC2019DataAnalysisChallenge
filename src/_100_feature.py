@@ -37,8 +37,12 @@ split_mapper = {
     "same_as_test": list(set(base.groupby('Engine').FlightNo.max().values.tolist()))
 }
 
-CONST.PIPE100 = CONST.PIPE100.format(fc_parameter.__class__.__name__, "-".join(FEATURE_TYPES),
-                                     get_config()['_100_feature']['split'])
+CONST.PIPE100 = CONST.PIPE100.format(
+    "-".join([str(c) for c in get_config()['_100_feature']['preselection']]),
+    fc_parameter.__class__.__name__,
+    "-".join(FEATURE_TYPES),
+    get_config()['_100_feature']['split']
+)
 
 if not os.path.exists(CONST.PIPE100):
     os.makedirs(CONST.PIPE100)
@@ -125,7 +129,8 @@ def create_dataset(df, split_list=[], istest=False, kind_to_fc_parameters={}):
                 _features = split_extract_feature(regime_df, split_list, kind_to_fc_parameters)
                 _features.drop(columns='Engine', inplace=True)
                 feature_cols = [f for f in _features.columns if f != 'Engine-Split']
-                rename_dict = dict(zip(feature_cols, [f + f'_Regime{regime}' for f in feature_cols]))
+                rename_dict = dict(
+                    zip(feature_cols, [f + f'_Regime{regime}' for f in feature_cols]))
                 _features = _features.rename(columns=rename_dict)
                 dataset = dataset.merge(_features, on='Engine-Split', how='left')
 
@@ -148,9 +153,46 @@ def _100_feature(out_trn_path=os.path.join(CONST.PIPE100, 'trn.f'),
     trn_base = pd.read_csv(trn_base_path)
     tst_base = pd.read_csv(tst_base_path)
 
+    from _200_selection import mapper as selection_mapper
+    feature_setting = {}
+    preselection_conf = get_config()['_100_feature']['preselection']
+
+    if "" != preselection_conf:
+        select_base_out_trn_path = os.path.join(CONST.PIPE100, 'selection_trn.f')
+        select_base_out_tst_path = os.path.join(CONST.PIPE100, 'selection_tst.f')
+
+        selected_out_trn_path = os.path.join(CONST.PIPE100, 'selected_trn.f')
+        selected_out_tst_path = os.path.join(CONST.PIPE100, 'selected_tst.f')
+
+        selection_split = list(range(20, 350, 100))
+        trn = create_dataset(trn_base, selection_split, False, feature_setting)
+        tst = create_dataset(tst_base, [], True, feature_setting)
+
+        trn.to_feather(select_base_out_trn_path)
+        tst.to_feather(select_base_out_tst_path)
+        func_selection = selection_mapper[preselection_conf[0]]
+
+        if len(preselection_conf) == 1:
+            trn_path, tst_path = func_selection(select_base_out_trn_path, select_base_out_tst_path)
+        else:
+            trn_path, tst_path = func_selection(select_base_out_trn_path,
+                                                select_base_out_tst_path,
+                                                *preselection_conf[1:],
+                                                out_trn_path=selected_out_trn_path,
+                                                out_tst_path=selected_out_tst_path)
+
+        selected_trn = pd.read_feather(trn_path)
+        print("Selected Train dataset size =", selected_trn.shape)
+
+        feat_list = [re.sub(r'_Regime[1-9]', '', col) for col in selected_trn.columns if
+                     col not in CONST.EX_COLS + ['CurrentFlightNo']]
+        print("Calculation feature num =", len(list(set(feat_list))))
+        feature_setting = from_columns(list(set(feat_list)))
+
     split_list = split_mapper[get_config()['_100_feature']['split']]
-    trn = create_dataset(trn_base, split_list, istest=False)
-    tst = create_dataset(tst_base, [], istest=True)
+    trn = create_dataset(trn_base, split_list, False, feature_setting)
+    tst = create_dataset(tst_base, [], True, feature_setting)
+
     assert (set([c for c in trn.columns if c not in CONST.EX_COLS]) ==
             set([c for c in tst.columns if c not in CONST.EX_COLS]))
 

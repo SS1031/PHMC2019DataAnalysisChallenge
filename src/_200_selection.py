@@ -122,9 +122,6 @@ def _203_lgb_top_k(in_trn_path, in_tst_path, k,
         d_train = lgb.Dataset(X_train, label=y_train, feature_name=features)
         d_valid = lgb.Dataset(X_valid, label=y_valid, feature_name=features)
 
-        d_train = lgb.Dataset(X_train, label=y_train, feature_name=features)
-        d_valid = lgb.Dataset(X_valid, label=y_valid, feature_name=features)
-
         params = {
             "boosting_type": "gbdt",
             "objective": "regression",
