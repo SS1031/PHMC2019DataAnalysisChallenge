@@ -34,7 +34,7 @@ def _300_optimize(out_path=os.path.join(CONST.PIPE300, 'optimized_params_{}_{}.j
 
         def __call__(self, trial):
             trn = self.trn
-            params['num_leaves'] = trial.suggest_int('num_leaves', 10, 150)
+            params['num_leaves'] = trial.suggest_int('num_leaves', 2, 100)
             params['min_data_in_leaf'] = trial.suggest_int('min_data_in_leaf', 20, 1000)
             params['max_bin'] = trial.suggest_int('max_bin', 32, 512)
             params['feature_fraction'] = trial.suggest_uniform('feature_fraction', 0.7, 1.0)
@@ -64,7 +64,7 @@ def _300_optimize(out_path=os.path.join(CONST.PIPE300, 'optimized_params_{}_{}.j
     params['feature_fraction'] = study.best_params['feature_fraction']
     params['bagging_fraction'] = study.best_params['bagging_fraction']
     params['lambda_l1'] = study.best_params['lambda_l1']
-    params['learning_rate'] = 0.005
+    params['learning_rate'] = 0.001
 
     with open(out_path, 'w') as fp:
         json.dump(params, fp)
@@ -79,9 +79,9 @@ def _301_optimize_cv_id(out_path=os.path.join(CONST.PIPE300, 'cv_id_optimized_pa
 
         def __call__(self, trial):
             trn = self.trn
-            params['num_leaves'] = trial.suggest_int('num_leaves', 10, 150)
+            params['num_leaves'] = trial.suggest_int('num_leaves', 2, 100)
             params['min_data_in_leaf'] = trial.suggest_int('min_data_in_leaf', 20, 1000)
-            params['max_bin'] = trial.suggest_int('max_bin', 32, 512)
+            params['max_bin'] = trial.suggest_int('max_bin', 30, 1000)
             params['feature_fraction'] = trial.suggest_uniform('feature_fraction', 0.7, 1.0)
             params['bagging_fraction'] = trial.suggest_uniform('bagging_fraction', 0.7, 1.0)
             params['bagging_freq'] = trial.suggest_int('bagging_freq', 1, 3)
@@ -109,7 +109,7 @@ def _301_optimize_cv_id(out_path=os.path.join(CONST.PIPE300, 'cv_id_optimized_pa
     params['feature_fraction'] = study.best_params['feature_fraction']
     params['bagging_fraction'] = study.best_params['bagging_fraction']
     params['lambda_l1'] = study.best_params['lambda_l1']
-    params['learning_rate'] = 0.001
+    params['learning_rate'] = 0.005
     params['verbose'] = -1
 
     with open(out_path, 'w') as fp:
