@@ -14,7 +14,7 @@ params = {
     "boosting_type": "gbdt",
     "objective": "regression",
     "metric": "mae",
-    "learning_rate": 0.005,
+    "learning_rate": 0.01,
     'num_leaves': 54,
     'min_data_in_leaf': 12,
     'max_bin': 369,
@@ -64,7 +64,7 @@ def _300_optimize(out_path=os.path.join(CONST.PIPE300, 'optimized_params_{}_{}.j
     params['feature_fraction'] = study.best_params['feature_fraction']
     params['bagging_fraction'] = study.best_params['bagging_fraction']
     params['lambda_l1'] = study.best_params['lambda_l1']
-    params['learning_rate'] = 0.001
+    params['learning_rate'] = 0.005
 
     with open(out_path, 'w') as fp:
         json.dump(params, fp)
