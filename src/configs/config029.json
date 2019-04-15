@@ -2,7 +2,7 @@
   "debug": false,
   "seed": 42,
   "_100_feature": {
-    "set": "minimal",
+    "set": "comprehensive",
     "type": ["all", "regime"],
     "split": "same_as_test"
   },
@@ -10,6 +10,6 @@
     ["drop_zero_variance"],
     ["drop_all_nan"],
     ["lasso", 0.008],
-    ["lgb_top_k", 100]
+    ["lgb_top_k", 200]
   ]
 }

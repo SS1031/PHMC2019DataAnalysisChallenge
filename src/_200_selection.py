@@ -173,10 +173,10 @@ def _203_lgb_top_k(in_trn_path, in_tst_path, k,
     mean_feature_importance = mean_feature_importance.sort_values(by="importance", ascending=False)
 
     # drop_cols = mean_feature_importance[mean_feature_importance == 0].dropna().index.values
-    drop_cols = mean_feature_importance[k:].index.values
+    drop_cols = list(mean_feature_importance[k:].index.values)
 
     print("Before drop lgbm selection features,", trn.shape)
-    trn = trn.drop(columns=drop_cols)
+    trn = trn.drop(columns=drop_cols + ['cv_id'])
     tst = tst.drop(columns=drop_cols)
     print("After drop lgb_selection features,", trn.shape)
 
