@@ -10,7 +10,7 @@
   "_200_selection": [
     ["drop_zero_variance"],
     ["drop_all_nan"],
-    ["lasso", 0.008],
-    ["lgb_top_k", 200]
+    ["lasso", 0.01],
+    ["lgb_top_k", 80]
   ]
 }
