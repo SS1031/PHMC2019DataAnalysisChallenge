@@ -8,7 +8,6 @@
     "split": "same_as_test"
   },
   "_200_selection": [
-    ["drop_zero_variance"],
     ["drop_all_nan"],
     ["lgb_top_k", 500]
   ]
