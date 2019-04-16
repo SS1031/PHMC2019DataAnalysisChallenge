@@ -102,7 +102,7 @@ def _301_optimize_cv_id(out_path=os.path.join(CONST.PIPE300, 'cv_id_optimized_pa
 
     objective = Objective(trn)
     study = optuna.create_study()
-    study.optimize(objective, n_trials=30)
+    study.optimize(objective, n_trials=10)
     params['num_leaves'] = study.best_params['num_leaves']
     params['min_data_in_leaf'] = study.best_params['min_data_in_leaf']
     params['max_bin'] = study.best_params['max_bin']

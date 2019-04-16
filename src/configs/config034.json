@@ -1,0 +1,14 @@
+{
+  "debug": false,
+  "seed": 42,
+  "_100_feature": {
+    "preselection": "",
+    "set": "minimal",
+    "type": ["regime"],
+    "split": "medium"
+  },
+  "_200_selection": [
+    ["drop_all_nan"],
+    ["lasso", 0.01]
+  ]
+}

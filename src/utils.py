@@ -46,7 +46,7 @@ def get_cv_id(seed=42):
     """
     random.seed(seed)
     trn_base_path, tst_base = _000_preprocess()
-    trn = pd.read_csv(trn_base_path)
+    trn = pd.read_feather(trn_base_path)
 
     flight_max = trn.groupby('Engine').FlightNo.max().sort_values().to_frame('Life')
     remainder_list = list(range(1, len(flight_max) % 8 + 1))

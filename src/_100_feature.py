@@ -29,12 +29,15 @@ fc_parameter = feature_set_mapper[get_config()['_100_feature']['set']]()
 FEATURE_TYPES = get_config()['_100_feature']['type']
 
 trn_base_path, tst_base_path = _001_preprocess()
-base = pd.read_csv(tst_base_path)
+trn_base = pd.read_feather(trn_base_path)
+tst_base = pd.read_feather(tst_base_path)
 
 split_mapper = {
-    "small": list(range(20, 350, 100)),
-    "medium": list(range(20, 350, 50)),
-    "same_as_test": list(set(base.groupby('Engine').FlightNo.max().values.tolist()))
+    "small": list(range(20, 360, 100)),
+    "medium": list(set(
+        list(range(20, 360, 30)) + list(trn_base.groupby('Engine').FlightNo.max().sort_values().values[0:100])
+    )),
+    "same_as_test": list(set(tst_base.groupby('Engine').FlightNo.max().values.tolist()))
 }
 
 CONST.PIPE100 = CONST.PIPE100.format(
@@ -150,23 +153,23 @@ def _100_feature(out_trn_path=os.path.join(CONST.PIPE100, 'trn.f'),
 
     trn_base_path, tst_base_path = _001_preprocess()
 
-    trn_base = pd.read_csv(trn_base_path)
-    tst_base = pd.read_csv(tst_base_path)
+    trn_base = pd.read_feather(trn_base_path)
+    tst_base = pd.read_feather(tst_base_path)
 
     from _200_selection import mapper as selection_mapper
     feature_setting = {}
     preselection_conf = get_config()['_100_feature']['preselection']
 
     if "" != preselection_conf:
-        select_base_out_trn_path = os.path.join(CONST.PIPE100, 'selection_trn.f')
-        select_base_out_tst_path = os.path.join(CONST.PIPE100, 'selection_tst.f')
-
         selected_out_trn_path = os.path.join(CONST.PIPE100, 'selected_trn.f')
         selected_out_tst_path = os.path.join(CONST.PIPE100, 'selected_tst.f')
 
+        select_base_out_trn_path = os.path.join(CONST.PIPE100, 'selection_trn.f')
+        select_base_out_tst_path = os.path.join(CONST.PIPE100, 'selection_tst.f')
+
         selection_split = list(range(20, 350, 100))
-        trn = create_dataset(trn_base, selection_split, False, feature_setting)
-        tst = create_dataset(tst_base, [], True, feature_setting)
+        trn = create_dataset(trn_base, selection_split, False, {})
+        tst = create_dataset(tst_base, [], True, {})
 
         trn.to_feather(select_base_out_trn_path)
         tst.to_feather(select_base_out_tst_path)

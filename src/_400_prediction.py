@@ -40,12 +40,12 @@ def _401_predict_weight1():
     return sbmt
 
 
-def _402_seed_average(loops=10):
+def _402_seed_average(loops=1):
     func_name = '_402_seed_average'
     output_path = os.path.join(CONST.PIPE400, f'{func_name}_{utils.get_config_name()}.csv')
     scores = []
     sbmts = pd.DataFrame()
-    for i in range(1, loops):
+    for i in range(1, loops+1):
         print("Loop :", i)
         seed = CONST.SEED + i
         score, preds = _400_train_predict(seed)
@@ -53,7 +53,7 @@ def _402_seed_average(loops=10):
         _sbmt = preds.mean(axis=1).to_frame(f'sbmt{i}')
         sbmts = pd.concat([sbmts, _sbmt], axis=1)
 
-    utils.update_result(func_name, np.mean(score), output_path)
+    utils.update_result(func_name, np.mean(scores), output_path)
     sbmt = sbmts.mean(axis=1).to_frame('Predicted RUL').reset_index()
     sbmt[['Predicted RUL']].to_csv(output_path, index=False)
 

@@ -183,45 +183,6 @@ def _203_lgb_top_k(in_trn_path, in_tst_path, k,
     return out_trn_path, out_tst_path
 
 
-def _204_select_k_by_f_regression(in_trn_path, in_tst_path, k,
-                                  out_trn_path=os.path.join(CONST.PIPE200, '_204_trn_{}_{}.f'),
-                                  out_tst_path=os.path.join(CONST.PIPE200, '_204_tst_{}_{}.f')):
-    _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
-    out_trn_path = out_trn_path.format(get_config_name(), _hash)
-    out_tst_path = out_tst_path.format(get_config_name(), _hash)
-
-    if get_config()['debug']:
-        out_trn_path += '.debug'
-    out_tst_path += '.debug'
-    if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
-        return out_trn_path, out_tst_path
-
-    trn = pd.read_feather(in_trn_path)
-    tst = pd.read_feather(in_tst_path)
-
-    # impute
-    tmp_trn = trn.fillna(trn.median())
-    features = [c for c in tmp_trn.columns if c not in CONST.EX_COLS]
-
-    # Create and fit selector
-    selector = SelectKBest(f_regression, k=k)
-    selector.fit(tmp_trn[features].values, trn['RUL'].values)
-
-    # Get columns to keep
-    mask = selector.get_support(indices=False)
-    drop_cols = tmp_trn[features].columns[~mask].tolist()
-
-    print("Before drop selection by f regression features,", trn.shape)
-    trn = trn.drop(columns=drop_cols)
-    tst = tst.drop(columns=drop_cols)
-    print("After drop selection by f regression features,", trn.shape)
-
-    trn.to_feather(out_trn_path)
-    tst.to_feather(out_tst_path)
-
-    return out_trn_path, out_tst_path
-
-
 def _205_lasso_selection(in_trn_path, in_tst_path, alpha=0.01,
                          out_trn_path=os.path.join(CONST.PIPE200, '_205_trn_{}_{}.f'),
                          out_tst_path=os.path.join(CONST.PIPE200, '_205_tst_{}_{}.f')):
@@ -261,7 +222,6 @@ mapper = {
     "drop_zero_variance": _201_drop_zero_variance,
     "drop_all_nan": _202_drop_all_nan,
     "lgb_top_k": _203_lgb_top_k,
-    "select_k_by_f_regression": _204_select_k_by_f_regression,
     "lasso": _205_lasso_selection,
 }
 
@@ -279,5 +239,5 @@ def _200_selection():
 
 if __name__ == '__main__':
     trn_path, tst_path = _100_feature()
-    # trn_path, tst_path = _201_drop_zero_variance(trn_path, tst_path)
     trn_path, tst_path = _200_selection()
+    # trn_path, tst_path = _201_drop_zero_variance(trn_path, tst_path)

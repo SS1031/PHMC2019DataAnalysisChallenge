@@ -11,7 +11,7 @@ def base_setup(kind='trn'):
     """
     :param kind: "trn" or "tst"
     """
-    save_path = os.path.join(CONST.PIPE000, f'{kind}_base.csv')
+    save_path = os.path.join(CONST.PIPE000, f'_000_{kind}.f')
 
     if os.path.exists(save_path):
         return save_path
@@ -40,7 +40,7 @@ def base_setup(kind='trn'):
     df = pd.concat([df, df_regime], axis=1)
     df = df.drop(columns=['FlightRegime'])
 
-    df.to_csv(save_path, index=False)
+    df.to_feather(save_path)
 
     return save_path
 
@@ -53,16 +53,16 @@ def _000_preprocess():
 
 
 def _001_preprocess():
-    out_trn_path = os.path.join(CONST.PIPE000, f'_001_trn_base.csv')
-    out_tst_path = os.path.join(CONST.PIPE000, f'_001_tst_base.csv')
+    out_trn_path = os.path.join(CONST.PIPE000, f'_001_trn.f')
+    out_tst_path = os.path.join(CONST.PIPE000, f'_001_tst.f')
 
     if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
         return out_trn_path, out_tst_path
 
     trn_path, tst_path = _000_preprocess()
 
-    trn = pd.read_csv(trn_path)
-    tst = pd.read_csv(tst_path)
+    trn = pd.read_feather(trn_path)
+    tst = pd.read_feather(tst_path)
 
     useless_cols = ["PowerSettingTra",
                     "TTotalTemperatureAtFanInletR",
@@ -73,10 +73,10 @@ def _001_preprocess():
     trn.drop(columns=useless_cols, inplace=True)
     tst.drop(columns=useless_cols, inplace=True)
 
-    trn.to_csv(out_trn_path, index=False)
-    tst.to_csv(out_tst_path, index=False)
+    trn.to_feather(out_trn_path)
+    tst.to_feather(out_tst_path)
 
-    return out_trn_path, out_trn_path
+    return out_trn_path, out_tst_path
 
 
 if __name__ == '__main__':
