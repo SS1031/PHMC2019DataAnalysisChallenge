@@ -2,13 +2,13 @@
   "debug": false,
   "seed": 42,
   "_100_feature": {
-    "preselection": ["lgb_top_k", 500],
+    "preselection": ["lgb_top_k", 2000],
     "set": "comprehensive",
-    "type": ["all", "regime"],
+    "type": ["regime"],
     "split": "same_as_test"
   },
   "_200_selection": [
     ["drop_all_nan"],
-    ["lgb_top_k", 500]
+    ["lgb_top_k", 100]
   ]
 }
