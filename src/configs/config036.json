@@ -1,0 +1,14 @@
+{
+  "debug": false,
+  "seed": 42,
+  "_100_feature": {
+    "preselection": ["lgb_top_k", 1000],
+    "set": "comprehensive",
+    "type": ["regime"],
+    "split": "based_on_train_and_test"
+  },
+  "_200_selection": [
+    ["drop_all_nan"],
+    ["lasso", 0.01]
+  ]
+}

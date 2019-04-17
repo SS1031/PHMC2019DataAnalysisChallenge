@@ -40,7 +40,7 @@ def _401_predict_weight1():
     return sbmt
 
 
-def _402_seed_average(loops=1):
+def _402_seed_average(loops=10):
     func_name = '_402_seed_average'
     output_path = os.path.join(CONST.PIPE400, f'{func_name}_{utils.get_config_name()}.csv')
     scores = []
