@@ -39,7 +39,7 @@ split_mapper = {
     "besed_on_train": list(set(
         list(trn_base.groupby('Engine').FlightNo.max().sort_values().values[0:200])
     )),
-    "besed_on_train_and_test": list(set(
+    "based_on_train_and_test": list(set(
         list(tst_base.groupby('Engine').FlightNo.max().values) +
         list(trn_base.groupby('Engine').FlightNo.max().sort_values().values[0:200])
     ))
