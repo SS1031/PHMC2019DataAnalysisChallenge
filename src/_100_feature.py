@@ -35,9 +35,12 @@ tst_base = pd.read_feather(tst_base_path)
 split_mapper = {
     "small": list(range(20, 360, 100)),
     "medium": list(range(20, 360, 30)),
-    "same_as_test": list(set(tst_base.groupby('Engine').FlightNo.max().values.tolist())),
+    "based_on_test": list(set(tst_base.groupby('Engine').FlightNo.max().values.tolist())),
     "besed_on_train": list(set(
-        list(range(20, 360, 10)) +
+        list(trn_base.groupby('Engine').FlightNo.max().sort_values().values[0:200])
+    )),
+    "besed_on_train_and_test": list(set(
+        list(tst_base.groupby('Engine').FlightNo.max().values) +
         list(trn_base.groupby('Engine').FlightNo.max().sort_values().values[0:200])
     ))
 }
