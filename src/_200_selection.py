@@ -17,7 +17,8 @@ from utils import get_config_name
 from utils import get_cv_id
 
 CONST.PIPE200 = CONST.PIPE200.format(
-    "-".join(str(e) for e in sum(get_config()['_200_selection'], [])))
+    "-".join(str(e) for e in sum(get_config()['_200_selection'], []))
+)
 if not os.path.exists(CONST.PIPE200):
     os.makedirs(CONST.PIPE200)
 

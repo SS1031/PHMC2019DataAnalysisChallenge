@@ -42,7 +42,12 @@ split_mapper = {
     "based_on_train_and_test": list(set(
         list(tst_base.groupby('Engine').FlightNo.max().values) +
         list(trn_base.groupby('Engine').FlightNo.max().sort_values().values[0:200])
-    ))
+    )),
+    "large": list(set(
+        list(range(20, 360, 5)) +
+        list(tst_base.groupby('Engine').FlightNo.max().values) +
+        list(trn_base.groupby('Engine').FlightNo.max().sort_values().values[0:200])
+    )),
 }
 
 CONST.PIPE100 = CONST.PIPE100.format(
