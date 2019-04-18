@@ -5,7 +5,7 @@
     "preselection": ["lgb_top_k", 1000],
     "set": "comprehensive",
     "type": ["regime"],
-    "split": "large"
+    "split": "base_on_test"
   },
   "_200_selection": [
     ["drop_zero_variance"],

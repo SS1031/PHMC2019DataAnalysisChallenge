@@ -11,15 +11,14 @@ from _000_preprocess import _000_preprocess
 
 def get_config_name():
     inifile = configparser.ConfigParser()
-    inifile.read('./conf.ini')
+    inifile.read(os.path.join(os.path.dirname(__file__), 'conf.ini'))
     return os.path.basename(inifile['conf']['configfile']).split('.')[0]
 
 
 def get_config():
     inifile = configparser.ConfigParser()
-    inifile.read('./conf.ini')
-
-    with open(inifile['conf']['configfile'], "r") as fp:
+    inifile.read(os.path.join(os.path.dirname(__file__), 'conf.ini'))
+    with open(os.path.join(os.path.dirname(__file__), inifile['conf']['configfile']), "r") as fp:
         conf = json.load(fp)
     return conf
 
@@ -29,7 +28,8 @@ def update_result(pred_function_name, score, output_file):
     dt_now = datetime.datetime.now().replace(microsecond=0).isoformat()
 
     new_row = pd.DataFrame([[config_name, pred_function_name, dt_now, score, output_file]],
-                           columns=['config', 'pred_func_name', 'exec time', 'score', 'output_file'])
+                           columns=['config', 'pred_func_name', 'exec time', 'score',
+                                    'output_file'])
     if os.path.exists(CONST.RESULT_SUMMARY):
         df = pd.read_csv(CONST.RESULT_SUMMARY)
     else:

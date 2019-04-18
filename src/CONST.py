@@ -2,6 +2,7 @@ import os
 import urllib.request
 import zipfile
 import shutil
+
 from utils import get_config
 
 SEED = get_config()['seed']

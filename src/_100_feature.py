@@ -78,7 +78,8 @@ def _create_rul(df, split_list):
     RUL = pd.DataFrame()
     flight_max = df.groupby('Engine').FlightNo.max()
     for split in split_list:
-        target_engine = flight_max.index[flight_max >= split].values
+        offset = 10
+        target_engine = flight_max.index[(flight_max - offset) >= split].values
         rul = (df[df.Engine.isin(target_engine)].groupby(
             ['Engine']
         ).FlightNo.max().to_frame('RUL') - split).reset_index()

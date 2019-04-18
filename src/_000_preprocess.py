@@ -4,7 +4,7 @@ import pandas as pd
 
 import CONST
 
-regex = re.compile('[^a-zA-Z]')
+regex = re.compile('[^a-zA-Z0-9]')
 
 
 def base_setup(kind='trn'):
@@ -53,6 +53,9 @@ def _000_preprocess():
 
 
 def _001_preprocess():
+    """Regimeごとに変化がないデータを削除する
+
+    """
     out_trn_path = os.path.join(CONST.PIPE000, f'_001_trn.f')
     out_tst_path = os.path.join(CONST.PIPE000, f'_001_tst.f')
 
@@ -64,14 +67,17 @@ def _001_preprocess():
     trn = pd.read_feather(trn_path)
     tst = pd.read_feather(tst_path)
 
-    useless_cols = ["PowerSettingTra",
-                    "TTotalTemperatureAtFanInletR",
-                    "PPressureAtFanInletPsia",
-                    "NfDmdDemandedFanSpeedRpm",
-                    "PcnfrDmdDemandedCorrectedFanSpeedRpm"]
+    drop_cols = ["Altitude",
+                 "Mach",
+                 "PowerSettingTra",
+                 "T2TotalTemperatureAtFanInletR",
+                 "P2PressureAtFanInletPsia",
+                 "P15TotalPressureInBypassDuctPsia",
+                 "FarbBurnerFuelAirRatio",
+                 "NfDmdDemandedFanSpeedRpm"]
 
-    trn.drop(columns=useless_cols, inplace=True)
-    tst.drop(columns=useless_cols, inplace=True)
+    trn.drop(columns=drop_cols, inplace=True)
+    tst.drop(columns=drop_cols, inplace=True)
 
     trn.to_feather(out_trn_path)
     tst.to_feather(out_tst_path)
