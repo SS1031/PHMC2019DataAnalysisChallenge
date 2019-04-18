@@ -84,9 +84,25 @@ def _001_preprocess():
 
     return out_trn_path, out_tst_path
 
-def _002_add_diff():
-    trn_path, tst_path = _001_preprocess()
 
+def _002_add_diff():
+    offset_features = ["T30TotalTemperatureAtHpcOutletR", "T50TotalTemperatureAtLptOutletR",
+                       "NcPhysicalCoreSpeedRpm", "Ps30StaticPressureAtHpcOutletPsia",
+                       "NrcCorrectedCoreSpeedRpm", "BprBypassRatio", "HtbleedBleedEnthalpy"]
+
+    trn_path, tst_path = _001_preprocess()
+    trn = pd.read_feather(trn_path)
+    tst = pd.read_feather(tst_path)
+
+    offset_trn = trn[offset_features + ['Engine', 'FlightRegime', 'FlightNo']].copy()
+    for f in offset_features:
+        print("Offset Feature =", f)
+        for eng in offset_trn.Engine.unique():
+            for regime in offset_trn.FlightRegime.unique():
+                offset_trn.loc[
+                    (offset_trn.Engine == eng) & (offset_trn.FlightRegime == regime), f] -= \
+                    offset_trn.loc[
+                        (offset_trn.Engine == eng) & (offset_trn.FlightRegime == regime), f].iloc[0]
 
 
 if __name__ == '__main__':
