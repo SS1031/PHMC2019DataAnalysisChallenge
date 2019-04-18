@@ -84,6 +84,10 @@ def _001_preprocess():
 
     return out_trn_path, out_tst_path
 
+def _002_add_diff():
+    trn_path, tst_path = _001_preprocess()
+
+
 
 if __name__ == '__main__':
     trn_path, tst_path = _001_preprocess()
