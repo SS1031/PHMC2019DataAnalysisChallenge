@@ -1,0 +1,16 @@
+{
+  "debug": false,
+  "seed": 42,
+  "nfold": 4,
+  "_100_feature": {
+    "preselection": ["lasso", 0.005],
+    "set": "comprehensive",
+    "type": ["regime"],
+    "split": "based_on_test"
+  },
+  "_200_selection": [
+    ["drop_zero_variance"],
+    ["drop_all_nan"],
+    ["lasso", 0.01]
+  ]
+}

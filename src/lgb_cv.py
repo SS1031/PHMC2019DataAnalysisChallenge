@@ -100,7 +100,8 @@ def lgb_cv_id_fold(trn, params, tst=None, seed=CONST.SEED, imp_plot=False):
     valid_preds = pd.DataFrame({'preds': [np.nan] * trn.shape[0], 'actual_RUL': trn.RUL})
     features = [c for c in trn.columns if c not in CONST.EX_COLS]
 
-    for i in list(range(1, 9)):
+    # for i in list(range(1, 9)):
+    for i in list(range(1, utils.get_config()['nfold'] + 1)):
         print(f"CV ID = {i}")
         X_train, y_train = trn.loc[trn.cv_id != i, features], trn.loc[trn.cv_id != i, 'RUL']
         X_valid, y_valid = trn.loc[trn.cv_id == i, features], trn.loc[trn.cv_id == i, 'RUL']

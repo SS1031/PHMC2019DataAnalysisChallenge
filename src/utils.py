@@ -47,11 +47,13 @@ def get_cv_id(seed=42):
     random.seed(seed)
     trn_base_path, tst_base = _000_preprocess()
     trn = pd.read_feather(trn_base_path)
+    nfold = get_config()['nfold']
 
     flight_max = trn.groupby('Engine').FlightNo.max().sort_values().to_frame('Life')
-    remainder_list = list(range(1, len(flight_max) % 8 + 1))
-    flight_max['cv_id'] = (random.sample([1, 2, 3, 4, 5, 6, 7, 8], 8) * (len(flight_max) // 8) +
-                           random.sample(remainder_list, len(remainder_list)))
+    remainder_list = list(range(1, len(flight_max) % nfold + 1))
+    flight_max['cv_id'] = (
+            random.sample(list(range(1, nfold + 1)), nfold) * (len(flight_max) // nfold) +
+            random.sample(remainder_list, len(remainder_list)))
     flight_max.reset_index(inplace=True)
 
     return flight_max[['Engine', 'cv_id']]

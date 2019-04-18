@@ -45,10 +45,11 @@ def _402_seed_average(loops=10):
     output_path = os.path.join(CONST.PIPE400, f'{func_name}_{utils.get_config_name()}.csv')
     scores = []
     sbmts = pd.DataFrame()
-    for i in range(1, loops+1):
+    for i in range(1, loops + 1):
         print("Loop :", i)
         seed = CONST.SEED + i
         score, preds = _400_train_predict(seed)
+        print("CV Score :", score)
         scores.append(score)
         _sbmt = preds.mean(axis=1).to_frame(f'sbmt{i}')
         sbmts = pd.concat([sbmts, _sbmt], axis=1)

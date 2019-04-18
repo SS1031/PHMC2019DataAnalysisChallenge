@@ -79,8 +79,8 @@ def _301_optimize_cv_id(out_path=os.path.join(CONST.PIPE300, 'cv_id_optimized_pa
 
         def __call__(self, trial):
             trn = self.trn
-            params['num_leaves'] = trial.suggest_int('num_leaves', 2, 70)
-            params['min_data_in_leaf'] = trial.suggest_int('min_data_in_leaf', 1, 70)
+            params['num_leaves'] = trial.suggest_int('num_leaves', 2, 256)
+            params['min_data_in_leaf'] = trial.suggest_int('min_data_in_leaf', 10, 256)
             params['max_bin'] = trial.suggest_int('max_bin', 1, 255)
             params['feature_fraction'] = trial.suggest_uniform('feature_fraction', 0.7, 1.0)
             params['bagging_fraction'] = trial.suggest_uniform('bagging_fraction', 0.7, 1.0)
