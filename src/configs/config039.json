@@ -3,7 +3,7 @@
   "seed": 42,
   "nfold": 4,
   "_100_feature": {
-    "preselection": ["lasso", 0.005],
+    "preselection": ["lgb_top_k", 1000],
     "set": "comprehensive",
     "type": ["regime"],
     "split": "based_on_test"
