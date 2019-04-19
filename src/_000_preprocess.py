@@ -85,25 +85,72 @@ def _001_preprocess():
     return out_trn_path, out_tst_path
 
 
-def _002_add_diff():
-    offset_features = ["T30TotalTemperatureAtHpcOutletR", "T50TotalTemperatureAtLptOutletR",
-                       "NcPhysicalCoreSpeedRpm", "Ps30StaticPressureAtHpcOutletPsia",
-                       "NrcCorrectedCoreSpeedRpm", "BprBypassRatio", "HtbleedBleedEnthalpy"]
+def _002_preprocess():
+    """オフセット前処理
+
+    """
+    out_trn_path = os.path.join(CONST.PIPE000, f'_002_trn.f')
+    out_tst_path = os.path.join(CONST.PIPE000, f'_002_tst.f')
+
+    if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
+        return out_trn_path, out_tst_path
+
+    offset_features = [
+        "T24TotalTemperatureAtLpcOutletR", "T30TotalTemperatureAtHpcOutletR",
+        "T50TotalTemperatureAtLptOutletR", "NcPhysicalCoreSpeedRpm",
+        "Ps30StaticPressureAtHpcOutletPsia", "NrcCorrectedCoreSpeedRpm", "BprBypassRatio",
+        "HtbleedBleedEnthalpy", "W31HptCoolantBleedLbmS", "W32LptCoolantBleedLbmS",
+    ]
 
     trn_path, tst_path = _001_preprocess()
     trn = pd.read_feather(trn_path)
     tst = pd.read_feather(tst_path)
 
-    offset_trn = trn[offset_features + ['Engine', 'FlightRegime', 'FlightNo']].copy()
+    offset_trn = trn[
+        offset_features + ['Engine', 'FlightNo'] + [f'Regime{r}' for r in range(1, 7)]
+        ].copy()
+    offset_tst = tst[
+        offset_features + ['Engine', 'FlightNo'] + [f'Regime{r}' for r in range(1, 7)]
+        ].copy()
+    print("Train data offset")
     for f in offset_features:
         print("Offset Feature =", f)
         for eng in offset_trn.Engine.unique():
-            for regime in offset_trn.FlightRegime.unique():
+            for r in [1, 2, 3, 4, 5, 6]:
                 offset_trn.loc[
-                    (offset_trn.Engine == eng) & (offset_trn.FlightRegime == regime), f] -= \
-                    offset_trn.loc[
-                        (offset_trn.Engine == eng) & (offset_trn.FlightRegime == regime), f].iloc[0]
+                    (offset_trn.Engine == eng) & (offset_trn[f'Regime{r}']), f
+                ] -= offset_trn.loc[
+                    (offset_trn.Engine == eng) & (offset_trn[f'Regime{r}']), f
+                ].iloc[0]
 
+    print("Test data offset")
+    for f in offset_features:
+        print("Offset Feature =", f)
+        for eng in offset_tst.Engine.unique():
+            for r in [1, 2, 3, 4, 5, 6]:
+                if len(offset_tst[(offset_tst.Engine == eng) & (offset_tst[f'Regime{r}'])]) > 0:
+                    offset_tst.loc[
+                        (offset_tst.Engine == eng) & (offset_tst[f'Regime{r}']), f
+                    ] -= offset_tst.loc[
+                        (offset_tst.Engine == eng) & (offset_tst[f'Regime{r}']), f
+                    ].iloc[0]
+
+    rename_dict = dict(zip(offset_features, ['Offset' + f for f in offset_features]))
+
+    offset_trn.rename(columns=rename_dict, inplace=True)
+    offset_tst.rename(columns=rename_dict, inplace=True)
+
+    trn.to_feather(out_trn_path)
+    tst.to_feather(out_tst_path)
+
+    return out_trn_path, out_tst_path
+
+
+_000_mapper = {
+    "drop_useless": _001_preprocess,
+    "offset": _002_preprocess,
+}
 
 if __name__ == '__main__':
-    trn_path, tst_path = _001_preprocess()
+    # trn_path, tst_path = _001_preprocess()
+    trn_path, tst_path = _002_preprocess()

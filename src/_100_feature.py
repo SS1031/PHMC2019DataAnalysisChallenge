@@ -16,7 +16,8 @@ import tsfresh
 from sklearn import preprocessing
 
 import CONST
-from _000_preprocess import _001_preprocess
+from _000_preprocess import _000_mapper
+# from _000_preprocess import _002_preprocess
 from utils import get_config
 
 feature_set_mapper = {
@@ -28,7 +29,7 @@ feature_set_mapper = {
 fc_parameter = feature_set_mapper[get_config()['_100_feature']['set']]()
 FEATURE_TYPES = get_config()['_100_feature']['type']
 
-trn_base_path, tst_base_path = _001_preprocess()
+trn_base_path, tst_base_path = _000_mapper['drop_useless']()
 trn_base = pd.read_feather(trn_base_path)
 tst_base = pd.read_feather(tst_base_path)
 
@@ -162,7 +163,7 @@ def _100_feature(out_trn_path=os.path.join(CONST.PIPE100, 'trn.f'),
     if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
         return out_trn_path, out_tst_path
 
-    trn_base_path, tst_base_path = _001_preprocess()
+    trn_base_path, tst_base_path = _000_mapper[get_config()['_000_preprocess']]()
 
     trn_base = pd.read_feather(trn_base_path)
     tst_base = pd.read_feather(tst_base_path)
