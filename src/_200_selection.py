@@ -126,7 +126,7 @@ def _203_lgb_top_k(in_trn_path, in_tst_path, k,
         params = {
             "boosting_type": "gbdt",
             "objective": "regression",
-            "metric": "mae",
+            "metric": "mse",
             "learning_rate": 0.01,
             "verbose": 1,
             "bagging_seed": seed,
@@ -219,11 +219,48 @@ def _205_lasso_selection(in_trn_path, in_tst_path, alpha=0.01,
     return out_trn_path, out_tst_path
 
 
+def _206_ridge_selection(in_trn_path, in_tst_path, alpha=0.01,
+                         out_trn_path=os.path.join(CONST.PIPE200, '_206_trn_{}_{}.f'),
+                         out_tst_path=os.path.join(CONST.PIPE200, '_206_tst_{}_{}.f')):
+    _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:5]
+    out_trn_path = out_trn_path.format(get_config_name(), _hash)
+    out_tst_path = out_tst_path.format(get_config_name(), _hash)
+
+    if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
+        return out_trn_path, out_tst_path
+
+    trn = pd.read_feather(in_trn_path)
+    tst = pd.read_feather(in_tst_path)
+
+    trn = trn.fillna(trn.median())
+    tst = tst.fillna(trn.median())
+
+    features = [c for c in trn.columns if c not in CONST.EX_COLS]
+
+    from sklearn.feature_selection import SelectFromModel
+    from sklearn.linear_model import Ridge
+    estimator = Ridge(alpha=alpha, normalize=True)
+    featureSelection = SelectFromModel(estimator)
+    featureSelection.fit(trn[features], trn['RUL'])
+    drop_cols = trn[features].columns[~featureSelection.get_support(indices=False)].tolist()
+
+    print("Before drop selection by lasso regression,", trn.shape)
+    trn = trn.drop(columns=drop_cols)
+    tst = tst.drop(columns=drop_cols)
+    print("After drop selection by lasso regression,", trn.shape)
+
+    trn.to_feather(out_trn_path)
+    tst.to_feather(out_tst_path)
+
+    return out_trn_path, out_tst_path
+
+
 mapper = {
     "drop_zero_variance": _201_drop_zero_variance,
     "drop_all_nan": _202_drop_all_nan,
     "lgb_top_k": _203_lgb_top_k,
     "lasso": _205_lasso_selection,
+    "ridge": _206_ridge_selection,
 }
 
 
@@ -239,6 +276,5 @@ def _200_selection():
 
 
 if __name__ == '__main__':
-    trn_path, tst_path = _100_feature()
     trn_path, tst_path = _200_selection()
     # trn_path, tst_path = _201_drop_zero_variance(trn_path, tst_path)
