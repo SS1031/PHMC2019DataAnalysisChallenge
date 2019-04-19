@@ -235,19 +235,23 @@ def _206_ridge_selection(in_trn_path, in_tst_path, alpha=0.01,
     trn = trn.fillna(trn.median())
     tst = tst.fillna(trn.median())
 
-    features = [c for c in trn.columns if c not in CONST.EX_COLS]
-
     from sklearn.feature_selection import SelectFromModel
     from sklearn.linear_model import Ridge
-    estimator = Ridge(alpha=alpha, normalize=True)
-    featureSelection = SelectFromModel(estimator, threshold=1e-5)
-    featureSelection.fit(trn[features], trn['RUL'])
-    drop_cols = trn[features].columns[~featureSelection.get_support(indices=False)].tolist()
 
-    print("Before drop selection by ridge regression,", trn.shape)
-    trn = trn.drop(columns=drop_cols)
-    tst = tst.drop(columns=drop_cols)
-    print("After drop selection by ridge regression,", trn.shape)
+    features = [c for c in trn.columns if c not in CONST.EX_COLS]
+    _i = 0
+    while len(features) > 300:
+        _i += 1
+        print(f"Ridge feature selection Iter = {_i}")
+        estimator = Ridge(alpha=alpha, normalize=True)
+        featureSelection = SelectFromModel(estimator, threshold="1.25*median")
+        featureSelection.fit(trn[features], trn['RUL'])
+        drop_cols = trn[features].columns[~featureSelection.get_support(indices=False)].tolist()
+        print("Before drop selection by ridge regression,", trn.shape)
+        trn = trn.drop(columns=drop_cols)
+        tst = tst.drop(columns=drop_cols)
+        print("After drop selection by ridge regression,", trn.shape)
+        features = [c for c in trn.columns if c not in CONST.EX_COLS]
 
     trn.to_feather(out_trn_path)
     tst.to_feather(out_tst_path)
