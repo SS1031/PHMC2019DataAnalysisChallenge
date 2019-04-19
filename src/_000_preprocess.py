@@ -140,8 +140,8 @@ def _002_preprocess():
     offset_trn.rename(columns=rename_dict, inplace=True)
     offset_tst.rename(columns=rename_dict, inplace=True)
 
-    trn.to_feather(out_trn_path)
-    tst.to_feather(out_tst_path)
+    offset_trn.to_feather(out_trn_path)
+    offset_tst.to_feather(out_tst_path)
 
     return out_trn_path, out_tst_path
 
