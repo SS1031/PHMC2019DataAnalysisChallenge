@@ -13,7 +13,7 @@ from _200_selection import _200_selection
 params = {
     "boosting_type": "gbdt",
     "objective": "regression",
-    "metric": "rmse",
+    "metric": "l2_root",
     "learning_rate": 0.01,
     'num_leaves': 54,
     'min_data_in_leaf': 12,

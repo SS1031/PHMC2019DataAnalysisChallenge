@@ -1,0 +1,17 @@
+{
+  "debug": false,
+  "seed": 42,
+  "nfold": 4,
+  "_000_preprocess": "offset",
+  "_100_feature": {
+    "preselection": ["lgb_top_k", 1000],
+    "set": "comprehensive",
+    "type": ["all"],
+    "split": "based_on_test"
+  },
+  "_200_selection": [
+    ["drop_zero_variance"],
+    ["drop_all_nan"],
+    ["lasso", 0.01]
+  ]
+}

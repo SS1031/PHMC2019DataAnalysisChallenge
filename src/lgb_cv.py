@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 from sklearn import preprocessing
 from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import GroupShuffleSplit
 
 import CONST
@@ -77,11 +78,12 @@ def lgb_n_fold_cv_random_gs(trn, params, tst=None, folds=8, seed=CONST.SEED, imp
         plt.savefig(os.path.join(CONST.IMPDIR, f'imp_{utils.get_config_name()}.png'))
 
     valid_preds.dropna(inplace=True)
+    print("CV MAE Score :", mean_absolute_error(valid_preds.actual_RUL, valid_preds.preds))
+    print("CV RMSE Score :", np.sqrt(mean_suqared_error(valid_preds.actual_RUL, valid_preds.preds)))
     if tst is None:
-        print("CV MAE Score :", mean_absolute_error(valid_preds.actual_RUL, valid_preds.preds))
-        return mean_absolute_error(valid_preds.actual_RUL, valid_preds.preds)
+        return np.sqrt(mean_squared_error(valid_preds.actual_RUL, valid_preds.preds))
     else:
-        return mean_absolute_error(valid_preds.actual_RUL, valid_preds.preds), preds
+        return np.sqrt(mean_squared_error(valid_preds.actual_RUL, valid_preds.preds)), preds
 
 
 def lgb_cv_id_fold(trn, params, tst=None, seed=CONST.SEED, imp_plot=False):
