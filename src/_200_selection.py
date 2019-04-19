@@ -244,10 +244,10 @@ def _206_ridge_selection(in_trn_path, in_tst_path, alpha=0.01,
     featureSelection.fit(trn[features], trn['RUL'])
     drop_cols = trn[features].columns[~featureSelection.get_support(indices=False)].tolist()
 
-    print("Before drop selection by lasso regression,", trn.shape)
+    print("Before drop selection by ridge regression,", trn.shape)
     trn = trn.drop(columns=drop_cols)
     tst = tst.drop(columns=drop_cols)
-    print("After drop selection by lasso regression,", trn.shape)
+    print("After drop selection by ridge regression,", trn.shape)
 
     trn.to_feather(out_trn_path)
     tst.to_feather(out_tst_path)
