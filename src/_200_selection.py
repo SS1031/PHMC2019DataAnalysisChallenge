@@ -240,7 +240,7 @@ def _206_ridge_selection(in_trn_path, in_tst_path, alpha=0.01,
     from sklearn.feature_selection import SelectFromModel
     from sklearn.linear_model import Ridge
     estimator = Ridge(alpha=alpha, normalize=True)
-    featureSelection = SelectFromModel(estimator)
+    featureSelection = SelectFromModel(estimator, threshold=1e-5)
     featureSelection.fit(trn[features], trn['RUL'])
     drop_cols = trn[features].columns[~featureSelection.get_support(indices=False)].tolist()
 

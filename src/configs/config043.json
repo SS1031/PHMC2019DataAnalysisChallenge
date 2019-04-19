@@ -12,6 +12,6 @@
   "_200_selection": [
     ["drop_zero_variance"],
     ["drop_all_nan"],
-    ["lasso", 0.005]
+    ["ridge", 0.001]
   ]
 }
