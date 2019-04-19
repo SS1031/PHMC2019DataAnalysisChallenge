@@ -4,7 +4,7 @@
   "nfold": 4,
   "_000_preprocess": "offset",
   "_100_feature": {
-    "preselection": "",
+    "preselection": ["lgb_top_k", 1000],
     "set": "comprehensive",
     "type": ["all"],
     "split": "based_on_test"

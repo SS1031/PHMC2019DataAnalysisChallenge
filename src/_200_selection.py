@@ -113,7 +113,7 @@ def _203_lgb_top_k(in_trn_path, in_tst_path, k,
     features = [c for c in trn.columns if c not in CONST.EX_COLS]
     feature_importance_df = pd.DataFrame()
 
-    for i in list(range(1, 9)):
+    for i in trn.cv_id.unique():
         print("CV ID", i)
         seed = CONST.SEED * i
 
