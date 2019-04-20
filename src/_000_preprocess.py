@@ -152,5 +152,6 @@ _000_mapper = {
 }
 
 if __name__ == '__main__':
+    trn_path, tst_path = _000_preprocess()
     # trn_path, tst_path = _001_preprocess()
-    trn_path, tst_path = _002_preprocess()
+    # trn_path, tst_path = _002_preprocess()

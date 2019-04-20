@@ -1,5 +1,6 @@
 .idea/
 data/input/*
+data/ftools/*
 data/output/*
 data/sandbox/*
 !data/output/_300_optimization/
