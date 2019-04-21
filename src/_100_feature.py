@@ -218,4 +218,5 @@ def _100_feature(out_trn_path=os.path.join(CONST.PIPE100, 'trn.f'),
 
 
 if __name__ == '__main__':
+    print("test")
     trn_path, tst_path = _100_feature()
