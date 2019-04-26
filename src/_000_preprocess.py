@@ -35,11 +35,6 @@ def base_setup(kind='trn'):
 
     df.columns = ["".join(regex.sub('', c.title()).split(' ')).strip() for c in df.columns]
 
-    df_regime = pd.get_dummies(df['FlightRegime'])
-    df_regime.columns = [f'Regime{c}' for c in df_regime.columns]
-    df = pd.concat([df, df_regime], axis=1)
-    df = df.drop(columns=['FlightRegime'])
-
     df.to_feather(save_path)
 
     return save_path
@@ -53,8 +48,7 @@ def _000_preprocess():
 
 
 def _001_preprocess():
-    """Regimeごとに変化がないデータを削除する
-
+    """Regimeに分割したときに一定値のデータを削除する
     """
     out_trn_path = os.path.join(CONST.PIPE000, f'_001_trn.f')
     out_tst_path = os.path.join(CONST.PIPE000, f'_001_tst.f')
@@ -67,17 +61,12 @@ def _001_preprocess():
     trn = pd.read_feather(trn_path)
     tst = pd.read_feather(tst_path)
 
-    drop_cols = ["Altitude",
-                 "Mach",
-                 "PowerSettingTra",
-                 "T2TotalTemperatureAtFanInletR",
-                 "P2PressureAtFanInletPsia",
-                 "P15TotalPressureInBypassDuctPsia",
-                 "FarbBurnerFuelAirRatio",
-                 "NfDmdDemandedFanSpeedRpm"]
+    # 一定値のチェック
+    tmp = (pd.concat([trn, tst], axis=0).groupby(['FlightRegime']).var() == 0).all(axis=0)
+    regime_zero_variance_cols = tmp.index[tmp].values
 
-    trn.drop(columns=drop_cols, inplace=True)
-    tst.drop(columns=drop_cols, inplace=True)
+    trn.drop(columns=regime_zero_variance_cols, inplace=True)
+    tst.drop(columns=regime_zero_variance_cols, inplace=True)
 
     trn.to_feather(out_trn_path)
     tst.to_feather(out_tst_path)
@@ -87,7 +76,6 @@ def _001_preprocess():
 
 def _002_preprocess():
     """オフセット前処理
-
     """
     out_trn_path = os.path.join(CONST.PIPE000, f'_002_trn.f')
     out_tst_path = os.path.join(CONST.PIPE000, f'_002_tst.f')
@@ -106,21 +94,18 @@ def _002_preprocess():
     trn = pd.read_feather(trn_path)
     tst = pd.read_feather(tst_path)
 
-    offset_trn = trn[
-        offset_features + ['Engine', 'FlightNo'] + [f'Regime{r}' for r in range(1, 7)]
-        ].copy()
-    offset_tst = tst[
-        offset_features + ['Engine', 'FlightNo'] + [f'Regime{r}' for r in range(1, 7)]
-        ].copy()
+    offset_trn = trn[offset_features + ['Engine', 'FlightNo', 'FlightRegime']].copy()
+    offset_tst = tst[offset_features + ['Engine', 'FlightNo', 'FlightRegime']].copy()
+
     print("Train data offset")
     for f in offset_features:
         print("Offset Feature =", f)
         for eng in offset_trn.Engine.unique():
             for r in [1, 2, 3, 4, 5, 6]:
                 offset_trn.loc[
-                    (offset_trn.Engine == eng) & (offset_trn[f'Regime{r}']), f
+                    (offset_trn.Engine == eng) & (offset_trn.FlightRegime == r), f
                 ] -= offset_trn.loc[
-                    (offset_trn.Engine == eng) & (offset_trn[f'Regime{r}']), f
+                    (offset_trn.Engine == eng) & (offset_trn.FlightRegime == r), f
                 ].iloc[0]
 
     print("Test data offset")
@@ -128,11 +113,11 @@ def _002_preprocess():
         print("Offset Feature =", f)
         for eng in offset_tst.Engine.unique():
             for r in [1, 2, 3, 4, 5, 6]:
-                if len(offset_tst[(offset_tst.Engine == eng) & (offset_tst[f'Regime{r}'])]) > 0:
+                if len(offset_tst[(offset_tst.Engine == eng) & (offset_tst.FlightRegime == r)]) > 0:
                     offset_tst.loc[
-                        (offset_tst.Engine == eng) & (offset_tst[f'Regime{r}']), f
+                        (offset_tst.Engine == eng) & (offset_tst.FlightRegime == r), f
                     ] -= offset_tst.loc[
-                        (offset_tst.Engine == eng) & (offset_tst[f'Regime{r}']), f
+                        (offset_tst.Engine == eng) & (offset_tst.FlightRegime == r), f
                     ].iloc[0]
 
     rename_dict = dict(zip(offset_features, ['Offset' + f for f in offset_features]))
