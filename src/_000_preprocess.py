@@ -83,16 +83,16 @@ def _002_preprocess():
     if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
         return out_trn_path, out_tst_path
 
+    trn_path, tst_path = _001_preprocess()
+    trn = pd.read_feather(trn_path)
+    tst = pd.read_feather(tst_path)
+
     offset_features = [
         "T24TotalTemperatureAtLpcOutletR", "T30TotalTemperatureAtHpcOutletR",
         "T50TotalTemperatureAtLptOutletR", "NcPhysicalCoreSpeedRpm",
         "Ps30StaticPressureAtHpcOutletPsia", "NrcCorrectedCoreSpeedRpm", "BprBypassRatio",
         "HtbleedBleedEnthalpy", "W31HptCoolantBleedLbmS", "W32LptCoolantBleedLbmS",
     ]
-
-    trn_path, tst_path = _001_preprocess()
-    trn = pd.read_feather(trn_path)
-    tst = pd.read_feather(tst_path)
 
     offset_trn = trn[offset_features + ['Engine', 'FlightNo', 'FlightRegime']].copy()
     offset_tst = tst[offset_features + ['Engine', 'FlightNo', 'FlightRegime']].copy()
@@ -127,6 +127,35 @@ def _002_preprocess():
 
     offset_trn.to_feather(out_trn_path)
     offset_tst.to_feather(out_tst_path)
+
+    return out_trn_path, out_tst_path
+
+
+def _010_preprocess():
+    out_trn_path = os.path.join(CONST.PIPE000, f'_010_trn.f')
+    out_tst_path = os.path.join(CONST.PIPE000, f'_010_tst.f')
+
+    if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
+        return out_trn_path, out_tst_path
+
+    trn_path, tst_path = _001_preprocess()
+    trn = pd.read_feather(trn_path)
+    tst = pd.read_feather(tst_path)
+
+    multiply_features = ['T24TotalTemperatureAtLpcOutletR', 'T30TotalTemperatureAtHpcOutletR',
+                         'T50TotalTemperatureAtLptOutletR', 'NcPhysicalCoreSpeedRpm',
+                         'Ps30StaticPressureAtHpcOutletPsia', 'Ps30StaticPressureAtHpcOutletPsia',
+                         'NrcCorrectedCoreSpeedRpm', 'BprBypassRatio', 'HtbleedBleedEnthalpy',
+                         'W31HptCoolantBleedLbmS', 'W32LptCoolantBleedLbmS']
+
+    trn['MultipliedFeature'] = 1
+    tst['MultipliedFeature'] = 1
+    for c in multiply_features:
+        trn['MultipliedFeature'] *= trn[c]
+        tst['MultipliedFeature'] *= tst[c]
+
+    trn.to_feather(out_trn_path)
+    tst.to_feather(out_tst_path)
 
     return out_trn_path, out_tst_path
 

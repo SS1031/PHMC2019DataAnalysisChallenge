@@ -259,6 +259,22 @@ def _206_ridge_selection(in_trn_path, in_tst_path, alpha=0.01,
     return out_trn_path, out_tst_path
 
 
+def _207_tsfresh_selection(in_trn_path, in_tst_path,
+                           out_trn_path=os.path.join(CONST.PIPE200, '_207_trn_{}_{}.f'),
+                           out_tst_path=os.path.join(CONST.PIPE200, '_207_tst_{}_{}.f')):
+    trn = pd.read_feather(in_trn_path)
+    tst = pd.read_feather(in_tst_path)
+    feat_cols = [f for f in trn.columns if f not in CONST.EX_COLS]
+
+    X_trn = trn[feat_cols]
+    y_trn = trn['RUL']
+
+    from tsfresh import extract_features, select_features
+    pvalues = select_features(X_trn, y_trn)
+
+    return pvalues
+
+
 mapper = {
     "drop_zero_variance": _201_drop_zero_variance,
     "drop_all_nan": _202_drop_all_nan,
@@ -280,5 +296,11 @@ def _200_selection():
 
 
 if __name__ == '__main__':
-    trn_path, tst_path = _200_selection()
+    # trn_path, tst_path = _200_selection()
     # trn_path, tst_path = _201_drop_zero_variance(trn_path, tst_path)
+    from _110_feature import _110_regime_feature
+
+    trn_path, tst_path = _110_regime_feature()
+    # trn = pd.read_feather(trn_path)
+    # tst = pd.read_feather(tst_path)
+    pvalues = _207_tsfresh_selection(trn_path, tst_path)

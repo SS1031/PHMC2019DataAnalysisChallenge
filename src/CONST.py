@@ -15,6 +15,7 @@ PIPE000 = os.path.join(OUTDIR, '_000')
 PIPE100 = os.path.join(OUTDIR, '_100_preselection[{}]_set[{}]_type[{}]_split[{}]')
 PIPE110 = os.path.join(OUTDIR, '_110')
 PIPE200 = os.path.join(OUTDIR, '_200_{}')
+PIPE210 = os.path.join(OUTDIR, '_210')
 PIPE300 = os.path.join(OUTDIR, '_300_optimization')
 PIPE400 = os.path.join(OUTDIR, '_400_prediction')
 EX_COLS = ['Engine', 'RUL', 'EncodedEngine', 'Weight', 'DiffFlightNo', 'cv_id', 'Engine-Split', 'CurrentFlightNo']
