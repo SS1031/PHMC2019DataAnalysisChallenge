@@ -1,68 +1,89 @@
+"""一度だけのカットオフで特徴量作成
+"""
+
 import os
-import json
-import numpy as np
-import pandas as pd
-import lightgbm as lgb
-from sklearn.model_selection import GroupShuffleSplit
-from tsfresh import extract_features
-from tqdm import tqdm
 import re
-import pickle
-from tsfresh.feature_extraction.settings import from_columns
-from tsfresh.feature_extraction import ComprehensiveFCParameters
-from tsfresh.feature_extraction import EfficientFCParameters
-from tsfresh.feature_extraction import MinimalFCParameters
-import tsfresh
-from sklearn import preprocessing
+import pandas as pd
+import numpy as np
+import random
+from tsfresh import extract_features
+from tsfresh import select_features
+from tsfresh.utilities.dataframe_functions import impute
 
 import CONST
-from _000_preprocess import _000_mapper
-# from _000_preprocess import _002_preprocess
 from utils import get_config
+from _000_preprocess import _001_preprocess, _002_preprocess, _003_preprocess
+
+from tsfresh.feature_extraction import MinimalFCParameters
+from tsfresh.feature_extraction import ComprehensiveFCParameters
+
+import warnings
+
+warnings.filterwarnings('ignore')
 
 feature_set_mapper = {
     "comprehensive": ComprehensiveFCParameters,
-    "efficient": EfficientFCParameters,
     "minimal": MinimalFCParameters,
 }
-
 fc_parameter = feature_set_mapper[get_config()['_100_feature']['set']]()
-FEATURE_TYPES = get_config()['_100_feature']['type']
-
-trn_base_path, tst_base_path = _000_mapper['drop_useless']()
-trn_base = pd.read_feather(trn_base_path)
-tst_base = pd.read_feather(tst_base_path)
-
-split_mapper = {
-    "small": list(range(20, 360, 100)),
-    "medium": list(range(20, 360, 30)),
-    "based_on_test": list(set(tst_base.groupby('Engine').FlightNo.max().values.tolist())),
-    "besed_on_train": list(set(
-        list(trn_base.groupby('Engine').FlightNo.max().sort_values().values[0:200])
-    )),
-    "based_on_train_and_test": list(set(
-        list(tst_base.groupby('Engine').FlightNo.max().values) +
-        list(trn_base.groupby('Engine').FlightNo.max().sort_values().values[0:200])
-    )),
-    "large": list(set(
-        list(range(20, 360, 5)) +
-        list(tst_base.groupby('Engine').FlightNo.max().values) +
-        list(trn_base.groupby('Engine').FlightNo.max().sort_values().values[0:200])
-    )),
-}
-
-CONST.PIPE100 = CONST.PIPE100.format(
-    "-".join([str(c) for c in get_config()['_100_feature']['preselection']]),
-    fc_parameter.__class__.__name__,
-    "-".join(FEATURE_TYPES),
-    get_config()['_100_feature']['split']
-)
 
 if not os.path.exists(CONST.PIPE100):
     os.makedirs(CONST.PIPE100)
 
 
-def _extract_features(df, kind_to_fc_parameters):
+def new_labels(data, seed):
+    ct_ids = []
+    ct_flights = []
+    ct_labels = []
+
+    regex = re.compile('[^0-9]')
+    data = data.copy()
+    gb = data.groupby(['Engine'])
+    for engine, engine_no_df in gb:
+        instances = engine_no_df.shape[0]
+        random.seed(seed + int(regex.sub('', engine)))
+        r = random.randint(5, instances - 3)
+        ct_ids.append(engine_no_df.iloc[r, :]['Engine'])
+        ct_flights.append(engine_no_df.iloc[r, :]['FlightNo'])
+        ct_labels.append(engine_no_df.iloc[r, :]['RUL'])
+
+    ct = pd.DataFrame({'Engine': ct_ids,
+                       'CutoffFlight': ct_flights,
+                       'RUL': ct_labels})
+    ct = ct[['Engine', 'CutoffFlight', 'RUL']]
+
+    return ct
+
+
+def make_cutoff_flights(data, seed=CONST.SEED):
+    data['RUL'] = np.nan
+    for eng in data.Engine.unique():
+        data.loc[(data.Engine == eng), 'RUL'] = (
+                data[(data.Engine == eng)].FlightNo.max() - data.loc[(data.Engine == eng), 'FlightNo']
+        )
+    assert data['RUL'].notnull().all()
+    data['RUL'] = data['RUL'].astype(int)
+
+    ct = new_labels(data, seed)
+    ct.index = ct['Engine']
+    assert ((ct['CutoffFlight'] + ct['RUL']) == data.groupby('Engine').FlightNo.max()).all()
+    ct.reset_index(inplace=True, drop=True)
+
+    return ct
+
+
+def make_cutoff_data(ct, data):
+    base_data = pd.DataFrame()
+    for row in ct.itertuples():
+        base_data = pd.concat([
+            base_data,
+            data[(data.Engine == row.Engine) & (data.FlightNo <= row.CutoffFlight)].copy()
+        ], axis=0)
+
+    return base_data
+
+
+def _extract_features(df, kind_to_fc_parameters={}):
     if bool(kind_to_fc_parameters):
         _feature = extract_features(df, column_id="Engine", column_sort="FlightNo",
                                     default_fc_parameters={},
@@ -73,149 +94,136 @@ def _extract_features(df, kind_to_fc_parameters):
     return _feature
 
 
-def _create_rul(df, split_list):
-    """訓練データセット専用の関数, RULとCurrentFlightを作成する
-    """
-    RUL = pd.DataFrame()
-    flight_max = df.groupby('Engine').FlightNo.max()
-    for split in split_list:
-        offset = 10
-        target_engine = flight_max.index[(flight_max - offset) >= split].values
-        rul = (df[df.Engine.isin(target_engine)].groupby(
-            ['Engine']
-        ).FlightNo.max().to_frame('RUL') - split).reset_index()
-        rul['Engine-Split'] = rul['Engine'] + "-" + "{0:03d}".format(split)
-        rul['CurrentFlightNo'] = split
-        RUL = pd.concat([RUL, rul], axis=0).reset_index(drop=True)
-
-    return RUL[['Engine', 'Engine-Split', 'RUL']]
-
-
-def split_extract_feature(df, split_list, kind_to_fc_parameters):
-    dataset = pd.DataFrame()
-    flight_max = df.groupby('Engine').FlightNo.max()
-    _split = []
-    for split in split_list:
-        print(f"Split = {split}")
-        target_engine = flight_max.index[flight_max >= split].values
-        tmp = df[(df.FlightNo <= split) & df.Engine.isin(target_engine)]
-        _features = _extract_features(tmp, kind_to_fc_parameters)
-        _features = _features.reset_index().rename(columns={_features.index.name: 'Engine'})
-        _split = _split + ["{0:03d}".format(split)] * len(_features)
-        dataset = pd.concat([dataset, _features], axis=0).reset_index(drop=True)
-
-    dataset['Split'] = _split
-    dataset['Engine-Split'] = dataset['Engine'] + "-" + dataset['Split']
-    dataset.drop(columns=['Split'], inplace=True)
-
-    return dataset
-
-
-def create_dataset(df, split_list=[], istest=False, kind_to_fc_parameters={}):
+def tsfresh_extract_cutoff_feature(data, seed, istest=False, feature_setting={}):
     if istest:
-        print("Create TEST dataset")
-        dataset = pd.DataFrame()
+        ct = data.groupby('Engine').FlightNo.max().rename('CutoffFlight').reset_index()
     else:
-        print("Create TRAIN dataset")
-        dataset = _create_rul(df, split_list)
+        ct = make_cutoff_flights(data.copy(), seed)
+        data = make_cutoff_data(ct, data)
 
-    if "all" in FEATURE_TYPES:
-        print("Feature Type = ALL")
-        if istest:
-            _features = _extract_features(df, kind_to_fc_parameters)
-            dataset = pd.concat([dataset, _features], axis=1, sort=True)
-        else:
-            _features = split_extract_feature(df, split_list, kind_to_fc_parameters)
-            _features.drop(columns='Engine', inplace=True)
-            dataset = dataset.merge(_features, on='Engine-Split', how='left')
+    feat = _extract_features(data, feature_setting)
+    feat = impute(feat)
+    feat.index.name = 'Engine'
+    feat.reset_index(inplace=True)
+    feat = feat.merge(ct, on='Engine', how='left')
+    feat.set_index('Engine', inplace=True)
+    feat_cols = [f for f in feat.columns if f not in CONST.EX_COLS]
 
-    if "regime" in FEATURE_TYPES:
-        print("Feature Type = Regime")
-        for regime in [1, 2, 3, 4, 5, 6]:
-            print(f"Regime = {regime}")
-            regime_df = df[df[f'Regime{regime}'] == 1].copy()
-            regime_df = regime_df[[c for c in regime_df.columns if 'Regime' not in c]]
+    if not istest:
+        print("Extracted Feature Shape =", feat.shape)
+        print("First Step Selection...")
+        _feat = select_features(feat[feat_cols], feat['RUL'], ml_task='regression')
+        print("Selected Feature Shape =", _feat.shape)
+        feat = pd.concat([_feat, feat['RUL']], axis=1)
 
-            if istest:
-                _features = _extract_features(regime_df, kind_to_fc_parameters)
-                _features = _features.add_suffix(f'_Regime{regime}')
-                dataset = pd.concat([dataset, _features], axis=1, sort=True)
-            else:
-                _features = split_extract_feature(regime_df, split_list, kind_to_fc_parameters)
-                _features.drop(columns='Engine', inplace=True)
-                feature_cols = [f for f in _features.columns if f != 'Engine-Split']
-                rename_dict = dict(
-                    zip(feature_cols, [f + f'_Regime{regime}' for f in feature_cols]))
-                _features = _features.rename(columns=rename_dict)
-                dataset = dataset.merge(_features, on='Engine-Split', how='left')
+    feat.reset_index(inplace=True)
+    return feat
 
+
+def tsfresh_extract_cutoff_regime_feature(data, seed, istest=False):
+    feat = pd.DataFrame()
     if istest:
-        dataset = dataset.reset_index().rename(columns={dataset.index.name: 'Engine'})
+        print("Test feature processing...")
+        ct = data.groupby('Engine').FlightNo.max().rename('CutoffFlight').reset_index()
     else:
-        dataset.drop(columns="Engine-Split", inplace=True)
-        assert dataset.RUL.notnull().all()
+        print("Train feature processing...")
+        ct = make_cutoff_flights(data.copy(), seed)
+        data = make_cutoff_data(ct, data)
 
-    return dataset
+    feat_cols = [f for f in data.columns if f not in ['FlightRegime']]
+    for r in [1, 2, 3, 5, 6]:
+        print(f"Regime {r}")
+        _feat = _extract_features(data[data.FlightRegime == r][feat_cols], {})
+        _feat = impute(_feat)
+        if not istest:
+            _feat.index.name = 'Engine'
+            _feat.reset_index(inplace=True)
+            _feat = _feat.merge(ct[['Engine', 'RUL']], on='Engine', how='left')
+            _feat.set_index('Engine', inplace=True)
+            print("Extracted Feature Shape =", _feat.shape)
+            print("First Step Selection...")
+            _feat_cols = [f for f in _feat.columns if f not in CONST.EX_COLS]
+            _feat = select_features(_feat[_feat_cols], _feat['RUL'], ml_task='regression')
+            print("Selected Feature Shape =", _feat.shape)
+        _feat.columns = [c + f'_Regime{r}' for c in _feat.columns]
+        feat = pd.concat([feat, _feat], axis=1, sort=True)
+
+    feat.index.name = 'Engine'
+    feat.reset_index(inplace=True)
+    feat = feat.merge(ct, on='Engine', how='left')
+
+    return feat
 
 
-def _100_feature(out_trn_path=os.path.join(CONST.PIPE100, 'trn.f'),
-                 out_tst_path=os.path.join(CONST.PIPE100, 'tst.f')):
+def _101_regime_feature(seed=CONST.SEED):
+    out_trn_path = os.path.join(CONST.PIPE100,
+                                f'_110_trn_seed{seed}_{fc_parameter.__class__.__name__}.f')
+    out_tst_path = os.path.join(CONST.PIPE100,
+                                f'_110_tst_seed{seed}_{fc_parameter.__class__.__name__}.f')
+
     if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
+        print("Cache file exist")
+        print(f"    {out_trn_path}")
+        print(f"    {out_tst_path}")
         return out_trn_path, out_tst_path
 
-    trn_base_path, tst_base_path = _000_mapper[get_config()['_000_preprocess']]()
+    trn_path, tst_path = _003_preprocess()
 
-    trn_base = pd.read_feather(trn_base_path)
-    tst_base = pd.read_feather(tst_base_path)
+    trn = pd.read_feather(trn_path)
+    tst = pd.read_feather(tst_path)
+    trn_dataset = tsfresh_extract_cutoff_regime_feature(trn, seed)
+    tst_dataset = tsfresh_extract_cutoff_regime_feature(tst, seed, istest=True)
 
-    from _200_selection import mapper as selection_mapper
-    feature_setting = {}
-    preselection_conf = get_config()['_100_feature']['preselection']
+    feat_cols = [c for c in trn_dataset.columns if c not in CONST.EX_COLS]
+    tst_dataset = tst_dataset[['Engine'] + feat_cols]
+    assert (set([c for c in trn_dataset.columns if c not in CONST.EX_COLS]) ==
+            set([c for c in tst_dataset.columns if c not in CONST.EX_COLS]))
 
-    if "" != preselection_conf:
-        selected_out_trn_path = os.path.join(CONST.PIPE100, 'selected_trn.f')
-        selected_out_tst_path = os.path.join(CONST.PIPE100, 'selected_tst.f')
-
-        select_base_out_trn_path = os.path.join(CONST.PIPE100, 'selection_trn.f')
-        select_base_out_tst_path = os.path.join(CONST.PIPE100, 'selection_tst.f')
-
-        selection_split = list(range(20, 350, 100))
-        trn = create_dataset(trn_base, selection_split, False, {})
-        tst = create_dataset(tst_base, [], True, {})
-
-        trn.to_feather(select_base_out_trn_path)
-        tst.to_feather(select_base_out_tst_path)
-        func_selection = selection_mapper[preselection_conf[0]]
-
-        if len(preselection_conf) == 1:
-            trn_path, tst_path = func_selection(select_base_out_trn_path, select_base_out_tst_path)
-        else:
-            trn_path, tst_path = func_selection(select_base_out_trn_path,
-                                                select_base_out_tst_path,
-                                                *preselection_conf[1:],
-                                                out_trn_path=selected_out_trn_path,
-                                                out_tst_path=selected_out_tst_path)
-
-        selected_trn = pd.read_feather(trn_path)
-        print("Selected Train dataset size =", selected_trn.shape)
-
-        feat_list = [re.sub(r'_Regime[1-9]', '', col) for col in selected_trn.columns if
-                     col not in CONST.EX_COLS + ['CurrentFlightNo']]
-        print("Calculation feature num =", len(list(set(feat_list))))
-        feature_setting = from_columns(list(set(feat_list)))
-
-    split_list = split_mapper[get_config()['_100_feature']['split']]
-    trn = create_dataset(trn_base, split_list, False, feature_setting)
-    tst = create_dataset(tst_base, [], True, feature_setting)
-
-    assert (set([c for c in trn.columns if c not in CONST.EX_COLS]) ==
-            set([c for c in tst.columns if c not in CONST.EX_COLS]))
-
-    trn.to_feather(out_trn_path)
-    tst.to_feather(out_tst_path)
+    trn_dataset.to_feather(out_trn_path)
+    tst_dataset.to_feather(out_tst_path)
 
     return out_trn_path, out_tst_path
 
 
+def _102_offset_feature(seed=CONST.SEED):
+    out_trn_path = os.path.join(CONST.PIPE100,
+                                f'_111_trn_seed{seed}_{fc_parameter.__class__.__name__}.f')
+    out_tst_path = os.path.join(CONST.PIPE100,
+                                f'_111_tst_seed{seed}_{fc_parameter.__class__.__name__}.f')
+
+    if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
+        return out_trn_path, out_tst_path
+
+    trn_path, tst_path = _002_preprocess()
+    trn = pd.read_feather(trn_path)
+    tst = pd.read_feather(tst_path)
+
+    trn_dataset = tsfresh_extract_cutoff_feature(trn, seed)
+    tst_dataset = tsfresh_extract_cutoff_feature(tst, seed, istest=True)
+    feat_cols = [c for c in trn_dataset.columns if c not in CONST.EX_COLS]
+    tst_dataset = tst_dataset[['Engine'] + feat_cols]
+    assert (set([c for c in trn_dataset.columns if c not in CONST.EX_COLS]) ==
+            set([c for c in tst_dataset.columns if c not in CONST.EX_COLS]))
+
+    trn_dataset.to_feather(out_trn_path)
+    tst_dataset.to_feather(out_tst_path)
+
+    return out_trn_path, out_tst_path
+
+
+feature_func_mapper = {
+    "regime": _101_regime_feature,
+    "offset": _102_offset_feature,
+}
+
+
+def _100_feature(seed=CONST.SEED):
+    print("Random Seed =", seed)
+    trn_path, tst_path = feature_func_mapper[get_config()['_100_feature']['func']](seed)
+    return trn_path, tst_path
+
+
 if __name__ == '__main__':
-    trn_path, tst_path = _100_feature()
+    trn, tst = _100_feature()
+    trn = pd.read_feather(trn)
+    tst = pd.read_feather(tst)

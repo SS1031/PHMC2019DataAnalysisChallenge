@@ -32,7 +32,7 @@ def knn_cv_id_fold(trn, params, tst=None, seed=CONST.SEED, imp_plot=False):
         X_train, y_train = trn.loc[trn.cv_id != i, features], trn.loc[trn.cv_id != i, 'RUL']
         X_valid, y_valid = trn.loc[trn.cv_id == i, features], trn.loc[trn.cv_id == i, 'RUL']
 
-        model = KNeighborsRegressor(n_neighbors=10)
+        model = KNeighborsRegressor(**params)
         model.fit(X_train, y_train)
         valid_preds.loc[trn.cv_id == i, 'preds'] = model.predict(X_valid)
 

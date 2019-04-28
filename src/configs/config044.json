@@ -4,14 +4,10 @@
   "nfold": 8,
   "_000_preprocess": "drop_useless",
   "_100_feature": {
-    "preselection": ["lgb_top_k", 1000],
     "set": "comprehensive",
-    "type": ["regime"],
-    "split": "based_on_test"
+    "func": "offset"
   },
-  "_200_selection": [
-    ["drop_zero_variance"],
-    ["drop_all_nan"],
-    ["lasso", 0.01]
-  ]
+  "_300_optimization": {
+    "func": "knn"
+  }
 }

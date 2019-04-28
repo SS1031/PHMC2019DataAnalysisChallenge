@@ -4,6 +4,7 @@ import pandas as pd
 
 import CONST
 
+
 regex = re.compile('[^a-zA-Z0-9]')
 
 
@@ -131,9 +132,14 @@ def _002_preprocess():
     return out_trn_path, out_tst_path
 
 
-def _010_preprocess():
-    out_trn_path = os.path.join(CONST.PIPE000, f'_010_trn.f')
-    out_tst_path = os.path.join(CONST.PIPE000, f'_010_tst.f')
+def _003_preprocess():
+    """
+    複数の列をかけ合わせた新しい列を追加
+
+    MultipliedDegradationFeature = 線形に劣化してるように見えるデータの掛け算
+    """
+    out_trn_path = os.path.join(CONST.PIPE000, f'_003_trn.f')
+    out_tst_path = os.path.join(CONST.PIPE000, f'_003_tst.f')
 
     if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
         return out_trn_path, out_tst_path
@@ -142,17 +148,23 @@ def _010_preprocess():
     trn = pd.read_feather(trn_path)
     tst = pd.read_feather(tst_path)
 
-    multiply_features = ['T24TotalTemperatureAtLpcOutletR', 'T30TotalTemperatureAtHpcOutletR',
-                         'T50TotalTemperatureAtLptOutletR', 'NcPhysicalCoreSpeedRpm',
-                         'Ps30StaticPressureAtHpcOutletPsia', 'Ps30StaticPressureAtHpcOutletPsia',
-                         'NrcCorrectedCoreSpeedRpm', 'BprBypassRatio', 'HtbleedBleedEnthalpy',
-                         'W31HptCoolantBleedLbmS', 'W32LptCoolantBleedLbmS']
+    degradation_features = ['T24TotalTemperatureAtLpcOutletR', 'T30TotalTemperatureAtHpcOutletR',
+                            'T50TotalTemperatureAtLptOutletR', 'NcPhysicalCoreSpeedRpm',
+                            'Ps30StaticPressureAtHpcOutletPsia', 'Ps30StaticPressureAtHpcOutletPsia',
+                            'NrcCorrectedCoreSpeedRpm', 'BprBypassRatio', 'HtbleedBleedEnthalpy',
+                            'W31HptCoolantBleedLbmS', 'W32LptCoolantBleedLbmS']
 
-    trn['MultipliedFeature'] = 1
-    tst['MultipliedFeature'] = 1
-    for c in multiply_features:
-        trn['MultipliedFeature'] *= trn[c]
-        tst['MultipliedFeature'] *= tst[c]
+    trn['MultipliedDegradationFeature'] = 1
+    tst['MultipliedDegradationFeature'] = 1
+    for f in degradation_features:
+        trn['MultipliedDegradationFeature'] *= trn[f]
+        tst['MultipliedDegradationFeature'] *= tst[f]
+
+    trn['MultipliedNumericFeature'] = 1
+    tst['MultipliedNumericFeature'] = 1
+    for f in trn.select_dtypes('number').columns:
+        trn['MultipliedNumericFeature'] *= trn[f]
+        tst['MultipliedNumericFeature'] *= tst[f]
 
     trn.to_feather(out_trn_path)
     tst.to_feather(out_tst_path)
@@ -166,6 +178,9 @@ _000_mapper = {
 }
 
 if __name__ == '__main__':
-    trn_path, tst_path = _000_preprocess()
+    # trn_path, tst_path = _000_preprocess()
     # trn_path, tst_path = _001_preprocess()
     # trn_path, tst_path = _002_preprocess()
+    trn_path, tst_path = _003_preprocess()
+    trn = pd.read_feather(trn_path)
+    tst = pd.read_feather(tst_path)
