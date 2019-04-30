@@ -54,3 +54,6 @@ def _502_weighted_average():
 
 if __name__ == '__main__':
     scores, preds, sbmt = _502_weighted_average()
+    from _300_optimization import _300_optimization
+    params_path, trn_path, tst_path = _300_optimization('lin', seed=CONST.SEED)
+    tst = pd.read_feather(tst_path)

@@ -7,12 +7,13 @@
     "set": "comprehensive",
     "func": "offset"
   },
-  "model": "knn",
+  "model": "lin",
   "_500_ensemble": {
     "models": [
       "lin",
-      "knn",
-      "lgb"
+      "svr_rbf",
+      "lgb",
+      "knn"
     ]
   }
 }

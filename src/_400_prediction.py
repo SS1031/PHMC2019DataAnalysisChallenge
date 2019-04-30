@@ -9,6 +9,7 @@ from lgb_cv import lgb_cv_id_fold
 from knn_cv import knn_cv_id_fold
 from lin_cv import lin_cv_id_fold
 from sgd_cv import sgd_cv_id_fold
+from svr_rbf_cv import svr_rbf_cv_id_fold
 from utils import get_config
 from _300_optimization import _300_optimization
 
@@ -17,6 +18,7 @@ predict_func_mapper = {
     'knn': knn_cv_id_fold,
     'lin': lin_cv_id_fold,
     'sgd': sgd_cv_id_fold,
+    'svr_rbf': svr_rbf_cv_id_fold,
 }
 
 
@@ -52,10 +54,12 @@ def _401_seed_average(loops=10):
 
     utils.update_result(func_name, np.mean(scores), np.std(scores), output_path)
     sbmt = sbmts.mean(axis=1).to_frame('Predicted RUL').reset_index()
+    # Post-Processing...
+    sbmt.loc[sbmt['Predicted RUL'] < 0, 'Predicted RUL'] = 0
     sbmt[['Predicted RUL']].to_csv(output_path, index=False)
 
     return sbmts
 
 
 if __name__ == '__main__':
-    preds = _401_seed_average()
+    preds = _401_seed_average(loops=50)

@@ -10,6 +10,7 @@ from utils import get_config
 from lgb_cv import lgb_cv_id_fold
 from knn_cv import knn_cv_id_fold
 from sgd_cv import sgd_cv_id_fold
+from svr_rbf_cv import svr_rbf_cv_id_fold
 from _200_selection import _200_selection
 
 lgb_optimization_space = {
@@ -180,11 +181,37 @@ def _304_optimize_sgd(in_trn_path, in_tst_path, seed=CONST.SEED,
     return out_path, in_trn_path, in_tst_path
 
 
+svr_rbf_optimization_space = {
+    'kernel': 'linear',
+    'C': 1.0,
+}
+
+
+def _305_optimize_svr_rbf(in_trn_path, in_tst_path, seed=CONST.SEED,
+                          out_path=os.path.join(CONST.PIPE300, '_305_svr_rbf_optimized_params_seed{}_{}_{}.json')):
+    _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:3]
+    out_path = out_path.format(seed, get_config_name(), _hash)
+
+    if os.path.exists(out_path):
+        print("Cache file exist")
+        print(f"    {out_path}")
+        print(f"    {in_trn_path}")
+        print(f"    {in_tst_path}")
+        return out_path, in_trn_path, in_tst_path
+
+    out_path = "_305_svr_rbf_fake.json"
+    with open(out_path, 'w') as fp:
+        json.dump(svr_rbf_optimization_space, fp)
+
+    return out_path, in_trn_path, in_tst_path
+
+
 optimization_func_mappter = {
     "lgb": _301_optimize_lgb,
     "knn": _302_optimize_knn,
     "lin": _303_optimize_lin,
     "sgd": _304_optimize_sgd,
+    "svr_rbf": _305_optimize_svr_rbf,
 }
 
 

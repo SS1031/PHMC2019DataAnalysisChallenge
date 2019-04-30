@@ -51,5 +51,8 @@ config044,2019-04-28T22:02:13,../data/output/_400_prediction/config044.csv,seed_
 config044,2019-04-28T22:22:06,../data/output/_400_prediction/config044.csv,seed_average,31.075865384615394,
 config045,2019-04-28T22:48:45,../data/output/_400_prediction/config045.csv,seed_average,24.261242351974765,
 config045,2019-04-29T14:17:00,../data/output/_400_prediction/config045.csv,seed_average,24.261242351974765,0.20964011694734733
-config045,2019-04-29T14:47:48,../data/output/_400_prediction/config045.csv,seed_average,24.261242351974765,0.20964011694734735
-config045,2019-04-29T15:18:04,../data/output/_400_prediction/config045.csv,seed_average,26.636645737216707,0.07037902558434855
+config045,2019-04-29T14:47:48,../data/output/_400_prediction/config045.csv,seed_average,24.261242351974765,0.20964011694734733
+config045,2019-04-29T15:18:04,../data/output/_400_prediction/config045.csv,seed_average,26.63664573721671,0.07037902558434855
+config045,2019-04-30T18:32:41,../data/output/_400_prediction/config045.csv,seed_average,9.294797948203254,0.17807166375371306
+config045,2019-04-30T18:35:05,../data/output/_400_prediction/config045.csv,seed_average,9.29196185708967,0.1424999068476953
+config045,2019-04-30T18:37:09,../data/output/_400_prediction/config045.csv,seed_average,9.291961857089667,0.1424999068476953
