@@ -8,13 +8,13 @@ import utils
 from _400_prediction import _400_prediction
 
 
-def _501_seed_average(model, loops=10):
+def _501_seed_average(model, loops=10, seed=CONST.SEED):
     print(f"Start Seed Averaging {model}...")
     scores = []
     sbmts = pd.DataFrame()
 
     for i in range(1, loops + 1):
-        seed = CONST.SEED * i
+        seed = seed * i
         print(f"Loop : {i}, Seed : {seed}")
         score, preds = _400_prediction(model, seed)
         print("CV Score :", score)
@@ -26,7 +26,7 @@ def _501_seed_average(model, loops=10):
     return sbmt, np.mean(scores)
 
 
-def _502_weighted_average():
+def _502_weighted_average(seed=CONST.SEED):
     """
     Weightの決め方は，
     - 各モデルのCVスコアの総和のそれぞれの割合の逆数
@@ -55,5 +55,6 @@ def _502_weighted_average():
 if __name__ == '__main__':
     scores, preds, sbmt = _502_weighted_average()
     from _300_optimization import _300_optimization
+
     params_path, trn_path, tst_path = _300_optimization('lin', seed=CONST.SEED)
     tst = pd.read_feather(tst_path)

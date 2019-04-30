@@ -10,7 +10,7 @@ from utils import get_config
 from lgb_cv import lgb_cv_id_fold
 from knn_cv import knn_cv_id_fold
 from sgd_cv import sgd_cv_id_fold
-from svr_rbf_cv import svr_lin_cv_id_fold
+from svr_lin_cv import svr_lin_cv_id_fold
 from _200_selection import _200_selection
 
 lgb_optimization_space = {
@@ -28,7 +28,7 @@ lgb_optimization_space = {
 
 
 def _301_optimize_lgb(in_trn_path, in_tst_path, seed=CONST.SEED,
-                      out_path=os.path.join(CONST.PIPE300, '_301_lgb_optimized_params_seed{}_{}_{}.json')):
+                      out_path=os.path.join(CONST.PIPE300, '_301_lgb_optimized_params_seed{}_{}.json')):
     class Objective(object):
         def __init__(self, trn):
             self.trn = trn
@@ -37,7 +37,7 @@ def _301_optimize_lgb(in_trn_path, in_tst_path, seed=CONST.SEED,
             trn = self.trn
             lgb_optimization_space['num_leaves'] = trial.suggest_int('num_leaves', 2, 128)
             lgb_optimization_space['min_data_in_leaf'] = trial.suggest_int('min_data_in_leaf', 10, 128)
-            lgb_optimization_space['max_bin'] = trial.suggest_int('max_bin', 1, 255)
+            lgb_optimization_space['max_bin'] = trial.suggest_int('max_bin', 4, 256)
             lgb_optimization_space['feature_fraction'] = trial.suggest_uniform('feature_fraction', 0.7, 1.0)
             lgb_optimization_space['bagging_fraction'] = trial.suggest_uniform('bagging_fraction', 0.7, 1.0)
             lgb_optimization_space['bagging_freq'] = trial.suggest_int('bagging_freq', 1, 3)
@@ -51,7 +51,7 @@ def _301_optimize_lgb(in_trn_path, in_tst_path, seed=CONST.SEED,
             return lgb_cv_id_fold(trn, lgb_optimization_space, seed=CONST.SEED)
 
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:3]
-    out_path = out_path.format(seed, get_config_name(), _hash)
+    out_path = out_path.format(seed, _hash)
 
     if os.path.exists(out_path):
         print("Cache file exist")
@@ -69,6 +69,7 @@ def _301_optimize_lgb(in_trn_path, in_tst_path, seed=CONST.SEED,
     lgb_optimization_space['feature_fraction'] = study.best_params['feature_fraction']
     lgb_optimization_space['bagging_fraction'] = study.best_params['bagging_fraction']
     # params['lambda_l1'] = study.best_params['lambda_l1']
+    # params['lambda_l2'] = study.best_params['lambda_l2']
     lgb_optimization_space['learning_rate'] = 0.005
 
     with open(out_path, 'w') as fp:
@@ -84,7 +85,7 @@ knn_optimization_space = {
 
 
 def _302_optimize_knn(in_trn_path, in_tst_path, seed=CONST.SEED,
-                      out_path=os.path.join(CONST.PIPE300, '_302_knn_optimized_params_seed{}_{}_{}.json')):
+                      out_path=os.path.join(CONST.PIPE300, '_302_knn_optimized_params_seed{}_{}.json')):
     class Objective(object):
         def __init__(self, trn):
             self.trn = trn
@@ -97,7 +98,7 @@ def _302_optimize_knn(in_trn_path, in_tst_path, seed=CONST.SEED,
             return knn_cv_id_fold(trn, knn_optimization_space, seed=CONST.SEED)
 
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:3]
-    out_path = out_path.format(seed, get_config_name(), _hash)
+    out_path = out_path.format(seed, _hash)
 
     if os.path.exists(out_path):
         print("Cache file exist")
@@ -139,7 +140,7 @@ sgd_optimization_space = {
 
 
 def _304_optimize_sgd(in_trn_path, in_tst_path, seed=CONST.SEED,
-                      out_path=os.path.join(CONST.PIPE300, '_304_sgd_optimized_params_seed{}_{}_{}.json')):
+                      out_path=os.path.join(CONST.PIPE300, '_304_sgd_optimized_params_seed{}_{}.json')):
     class Objective(object):
         def __init__(self, trn):
             self.trn = trn
@@ -156,7 +157,7 @@ def _304_optimize_sgd(in_trn_path, in_tst_path, seed=CONST.SEED,
             return sgd_cv_id_fold(trn, sgd_optimization_space, seed=CONST.SEED)
 
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:3]
-    out_path = out_path.format(seed, get_config_name(), _hash)
+    out_path = out_path.format(seed, _hash)
 
     if os.path.exists(out_path):
         print("Cache file exist")
@@ -164,7 +165,7 @@ def _304_optimize_sgd(in_trn_path, in_tst_path, seed=CONST.SEED,
         return out_path, in_trn_path, in_tst_path
 
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:3]
-    out_path = out_path.format(seed, get_config_name(), _hash)
+    out_path = out_path.format(seed, _hash)
 
     trn = pd.read_feather(in_trn_path)
 
@@ -182,7 +183,7 @@ svr_lin_optimization_space = {
 
 
 def _305_optimize_svr_lin(in_trn_path, in_tst_path, seed=CONST.SEED,
-                          out_path=os.path.join(CONST.PIPE300, '_305_svr_rbf_optimized_params_seed{}_{}_{}.json')):
+                          out_path=os.path.join(CONST.PIPE300, '_305_svr_rbf_optimized_params_seed{}_{}.json')):
     class Objective(object):
         def __init__(self, trn):
             self.trn = trn
@@ -195,7 +196,7 @@ def _305_optimize_svr_lin(in_trn_path, in_tst_path, seed=CONST.SEED,
             return svr_lin_cv_id_fold(trn, svr_lin_optimization_space, seed=CONST.SEED)
 
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:3]
-    out_path = out_path.format(seed, get_config_name(), _hash)
+    out_path = out_path.format(seed, _hash)
 
     if os.path.exists(out_path):
         print("Cache file exist")

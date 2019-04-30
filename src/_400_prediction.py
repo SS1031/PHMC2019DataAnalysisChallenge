@@ -9,7 +9,7 @@ from lgb_cv import lgb_cv_id_fold
 from knn_cv import knn_cv_id_fold
 from lin_cv import lin_cv_id_fold
 from sgd_cv import sgd_cv_id_fold
-from svr_rbf_cv import svr_lin_cv_id_fold
+from svr_lin_cv import svr_lin_cv_id_fold
 from utils import get_config
 from _300_optimization import _300_optimization
 
@@ -18,7 +18,7 @@ predict_func_mapper = {
     'knn': knn_cv_id_fold,
     'lin': lin_cv_id_fold,
     'sgd': sgd_cv_id_fold,
-    'svr_rbf': svr_lin_cv_id_fold,
+    'svr_lin': svr_lin_cv_id_fold,
 }
 
 

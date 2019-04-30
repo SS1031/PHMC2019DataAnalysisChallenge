@@ -38,7 +38,6 @@ def lin_cv_id_fold(trn, params={}, tst=None, seed=CONST.SEED, imp_plot=False):
         if tst is not None:
             preds[f'fold{i + 1}'] = model.predict(tst[features])
 
-    print(valid_preds)
     valid_preds.dropna(inplace=True)
     if tst is None:
         print("CV MAE Score :", mean_absolute_error(valid_preds.actual_RUL, valid_preds.preds))
