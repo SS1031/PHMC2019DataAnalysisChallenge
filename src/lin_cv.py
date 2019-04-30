@@ -2,18 +2,19 @@ import pandas as pd
 import numpy as np
 
 from sklearn import preprocessing
-from sklearn.neighbors import KNeighborsRegressor
+from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error
 
 import CONST
 import utils
 
 
-def knn_cv_id_fold(trn, params, tst=None, seed=CONST.SEED, imp_plot=False):
+def lin_cv_id_fold(trn, params={}, tst=None, seed=CONST.SEED, imp_plot=False):
     if tst is not None:
         preds = tst[['Engine']].copy()
 
     cv_id = utils.get_cv_id(seed)
+
     trn = trn.merge(cv_id, on=['Engine'], how='left')
     assert trn.cv_id.notnull().all()
 
@@ -30,13 +31,14 @@ def knn_cv_id_fold(trn, params, tst=None, seed=CONST.SEED, imp_plot=False):
         X_train, y_train = trn.loc[trn.cv_id != i, features], trn.loc[trn.cv_id != i, 'RUL']
         X_valid, y_valid = trn.loc[trn.cv_id == i, features], trn.loc[trn.cv_id == i, 'RUL']
 
-        model = KNeighborsRegressor(**params)
+        model = LinearRegression(fit_intercept=True, normalize=False)
         model.fit(X_train, y_train)
         valid_preds.loc[trn.cv_id == i, 'preds'] = model.predict(X_valid)
 
         if tst is not None:
             preds[f'fold{i + 1}'] = model.predict(tst[features])
 
+    print(valid_preds)
     valid_preds.dropna(inplace=True)
     if tst is None:
         print("CV MAE Score :", mean_absolute_error(valid_preds.actual_RUL, valid_preds.preds))

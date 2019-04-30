@@ -23,22 +23,22 @@ def get_config():
     return conf
 
 
-def update_result(pred_function_name, score, output_file):
+def update_result(pred_function_name, score, std, output_file):
     config_name = get_config_name()
     dt_now = datetime.datetime.now().replace(microsecond=0).isoformat()
 
-    new_row = pd.DataFrame([[config_name, pred_function_name, dt_now, score, output_file]],
-                           columns=['config', 'pred_func_name', 'exec time', 'score',
+    new_row = pd.DataFrame([[config_name, pred_function_name, dt_now, score, std, output_file]],
+                           columns=['config', 'pred_func_name', 'exec time', 'score', 'std',
                                     'output_file'])
     if os.path.exists(CONST.RESULT_SUMMARY):
         df = pd.read_csv(CONST.RESULT_SUMMARY)
     else:
-        df = pd.DataFrame(columns=['config', 'pred_func_name', 'exec time', 'score', 'output_file'])
+        df = pd.DataFrame(columns=['config', 'pred_func_name', 'exec time', 'score', 'std', 'output_file'])
 
     df = pd.concat([df, new_row], axis=0).reset_index(drop=True)
     df.to_csv(CONST.RESULT_SUMMARY, index=False)
     print("=== Update result summary ==== ")
-    print(df)
+    print(df.tail())
 
 
 def get_cv_id(seed=42):
