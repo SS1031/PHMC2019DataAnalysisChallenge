@@ -10,3 +10,4 @@ _402_seed_average_config024.csv,C0004_12_04_2019.csv,20.049245965,17.05123904,LG
 _402_seed_average_config029.csv,C0004_15_04_2019.csv,21.334736321205746,16.97975715,ツラタン
 _402_seed_average_config034.csv,C0004_16_04_2019.csv,14.5407236614,19.39130862,MinimalFeatureSet-trainのFlightNo.max()でsplit
 _402_seed_average_config036.csv,C0004_17_04_2019.csv,16.267124729448152,20.36265792,ComprehensiveSet-based_on_train_and_test_めっちゃ過学習するようになった
+Config045.csv,C0004_30_04_2019.csv,9.291961857089667,,LinearRegressionのマイナスを0に変換

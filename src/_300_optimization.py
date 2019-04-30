@@ -10,7 +10,7 @@ from utils import get_config
 from lgb_cv import lgb_cv_id_fold
 from knn_cv import knn_cv_id_fold
 from sgd_cv import sgd_cv_id_fold
-from svr_rbf_cv import svr_rbf_cv_id_fold
+from svr_rbf_cv import svr_lin_cv_id_fold
 from _200_selection import _200_selection
 
 lgb_optimization_space = {
@@ -56,8 +56,6 @@ def _301_optimize_lgb(in_trn_path, in_tst_path, seed=CONST.SEED,
     if os.path.exists(out_path):
         print("Cache file exist")
         print(f"    {out_path}")
-        print(f"    {in_trn_path}")
-        print(f"    {in_tst_path}")
         return out_path, in_trn_path, in_tst_path
 
     trn = pd.read_feather(in_trn_path)
@@ -104,8 +102,6 @@ def _302_optimize_knn(in_trn_path, in_tst_path, seed=CONST.SEED,
     if os.path.exists(out_path):
         print("Cache file exist")
         print(f"    {out_path}")
-        print(f"    {in_trn_path}")
-        print(f"    {in_tst_path}")
         return out_path, in_trn_path, in_tst_path
 
     trn = pd.read_feather(in_trn_path)
@@ -165,8 +161,6 @@ def _304_optimize_sgd(in_trn_path, in_tst_path, seed=CONST.SEED,
     if os.path.exists(out_path):
         print("Cache file exist")
         print(f"    {out_path}")
-        print(f"    {in_trn_path}")
-        print(f"    {in_tst_path}")
         return out_path, in_trn_path, in_tst_path
 
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:3]
@@ -181,27 +175,41 @@ def _304_optimize_sgd(in_trn_path, in_tst_path, seed=CONST.SEED,
     return out_path, in_trn_path, in_tst_path
 
 
-svr_rbf_optimization_space = {
+svr_lin_optimization_space = {
     'kernel': 'linear',
     'C': 1.0,
 }
 
 
-def _305_optimize_svr_rbf(in_trn_path, in_tst_path, seed=CONST.SEED,
+def _305_optimize_svr_lin(in_trn_path, in_tst_path, seed=CONST.SEED,
                           out_path=os.path.join(CONST.PIPE300, '_305_svr_rbf_optimized_params_seed{}_{}_{}.json')):
+    class Objective(object):
+        def __init__(self, trn):
+            self.trn = trn
+
+        def __call__(self, trial):
+            trn = self.trn
+
+            svr_lin_optimization_space['C'] = trial.suggest_loguniform('C', 1e-2, 1e2)
+
+            return svr_lin_cv_id_fold(trn, svr_lin_optimization_space, seed=CONST.SEED)
+
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:3]
     out_path = out_path.format(seed, get_config_name(), _hash)
 
     if os.path.exists(out_path):
         print("Cache file exist")
         print(f"    {out_path}")
-        print(f"    {in_trn_path}")
-        print(f"    {in_tst_path}")
         return out_path, in_trn_path, in_tst_path
 
-    out_path = "_305_svr_rbf_fake.json"
+    trn = pd.read_feather(in_trn_path)
+
+    objective = Objective(trn)
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=30)
+
     with open(out_path, 'w') as fp:
-        json.dump(svr_rbf_optimization_space, fp)
+        json.dump(svr_lin_optimization_space, fp)
 
     return out_path, in_trn_path, in_tst_path
 
@@ -211,7 +219,7 @@ optimization_func_mappter = {
     "knn": _302_optimize_knn,
     "lin": _303_optimize_lin,
     "sgd": _304_optimize_sgd,
-    "svr_rbf": _305_optimize_svr_rbf,
+    "svr_lin": _305_optimize_svr_lin,
 }
 
 
@@ -223,4 +231,4 @@ def _300_optimization(model, seed=CONST.SEED):
 
 
 if __name__ == '__main__':
-    param_path, trn_path, tst_path = _300_optimization('lin', seed=42)
+    param_path, trn_path, tst_path = _300_optimization('svr_lin', seed=123)

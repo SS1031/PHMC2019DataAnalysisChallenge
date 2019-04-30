@@ -10,7 +10,7 @@ import CONST
 import utils
 
 
-def svr_rbf_cv_id_fold(trn, params={}, tst=None, seed=CONST.SEED, imp_plot=False):
+def svr_lin_cv_id_fold(trn, params={}, tst=None, seed=CONST.SEED, imp_plot=False):
     """
     """
     if tst is not None:
