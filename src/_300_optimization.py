@@ -11,6 +11,7 @@ from lgb_cv import lgb_cv_id_fold
 from knn_cv import knn_cv_id_fold
 from sgd_cv import sgd_cv_id_fold
 from svr_lin_cv import svr_lin_cv_id_fold
+from lasso_cv import lasso_cv_id_fold
 from _200_selection import _200_selection
 
 lgb_optimization_space = {
@@ -48,7 +49,7 @@ def _301_optimize_lgb(in_trn_path, in_tst_path, seed=CONST.SEED,
             # params['lambda_l2'] = trial.suggest_uniform('lambda_l2', .0, .1)
             lgb_optimization_space['verbose'] = -1
 
-            return lgb_cv_id_fold(trn, lgb_optimization_space, seed=CONST.SEED)
+            return lgb_cv_id_fold(trn, lgb_optimization_space, model_seed=CONST.SEED)
 
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:3]
     out_path = out_path.format(seed, _hash)
@@ -95,7 +96,7 @@ def _302_optimize_knn(in_trn_path, in_tst_path, seed=CONST.SEED,
             knn_optimization_space['n_neighbors'] = trial.suggest_int('n_neighbors', 2, 32)
             knn_optimization_space['weights'] = trial.suggest_categorical('weights', ['uniform', 'distance'])
 
-            return knn_cv_id_fold(trn, knn_optimization_space, seed=CONST.SEED)
+            return knn_cv_id_fold(trn, knn_optimization_space, model_seed=CONST.SEED)
 
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:3]
     out_path = out_path.format(seed, _hash)
@@ -154,7 +155,7 @@ def _304_optimize_sgd(in_trn_path, in_tst_path, seed=CONST.SEED,
             sgd_optimization_space['penalty'] = trial.suggest_categorical('penalty', ['none', 'l2', 'l1', 'elasticnet'])
             sgd_optimization_space['alpha'] = trial.suggest_loguniform('alpha', 1e-5, 1e-3)
 
-            return sgd_cv_id_fold(trn, sgd_optimization_space, seed=CONST.SEED)
+            return sgd_cv_id_fold(trn, sgd_optimization_space, model_seed=CONST.SEED)
 
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:3]
     out_path = out_path.format(seed, _hash)
@@ -183,7 +184,7 @@ svr_lin_optimization_space = {
 
 
 def _305_optimize_svr_lin(in_trn_path, in_tst_path, seed=CONST.SEED,
-                          out_path=os.path.join(CONST.PIPE300, '_305_svr_rbf_optimized_params_seed{}_{}.json')):
+                          out_path=os.path.join(CONST.PIPE300, '_305_svr_lin_optimized_params_seed{}_{}.json')):
     class Objective(object):
         def __init__(self, trn):
             self.trn = trn
@@ -193,7 +194,7 @@ def _305_optimize_svr_lin(in_trn_path, in_tst_path, seed=CONST.SEED,
 
             svr_lin_optimization_space['C'] = trial.suggest_loguniform('C', 1e-2, 1e2)
 
-            return svr_lin_cv_id_fold(trn, svr_lin_optimization_space, seed=CONST.SEED)
+            return svr_lin_cv_id_fold(trn, svr_lin_optimization_space, model_seed=CONST.SEED)
 
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:3]
     out_path = out_path.format(seed, _hash)
@@ -208,9 +209,49 @@ def _305_optimize_svr_lin(in_trn_path, in_tst_path, seed=CONST.SEED,
     objective = Objective(trn)
     study = optuna.create_study()
     study.optimize(objective, n_trials=30)
+    svr_lin_optimization_space['C'] = study.best_params['C']
 
     with open(out_path, 'w') as fp:
         json.dump(svr_lin_optimization_space, fp)
+
+    return out_path, in_trn_path, in_tst_path
+
+
+lasso_optimization_space = {
+    'alpha': 1.0,
+    'fit_intercept': True,
+    'normalize': False,
+}
+
+
+def _306_optimize_lasso(in_trn_path, in_tst_path, seed=CONST.SEED,
+                        out_path=os.path.join(CONST.PIPE300, '_306_lasso_optimized_params_seed{}_{}.json')):
+    class Objective(object):
+        def __init__(self, trn):
+            self.trn = trn
+
+        def __call__(self, trial):
+            trn = self.trn
+            lasso_optimization_space['alpha'] = trial.suggest_uniform('alpha', 1e-2, 1)
+            return lasso_cv_id_fold(trn, lasso_optimization_space, model_seed=CONST.SEED)
+
+    _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:3]
+    out_path = out_path.format(seed, _hash)
+
+    if os.path.exists(out_path):
+        print("Cache file exist")
+        print(f"    {out_path}")
+        return out_path, in_trn_path, in_tst_path
+
+    trn = pd.read_feather(in_trn_path)
+
+    objective = Objective(trn)
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=30)
+    lasso_optimization_space['alpha'] = study.best_params['alpha']
+
+    with open(out_path, 'w') as fp:
+        json.dump(lasso_optimization_space, fp)
 
     return out_path, in_trn_path, in_tst_path
 
@@ -221,6 +262,7 @@ optimization_func_mappter = {
     "lin": _303_optimize_lin,
     "sgd": _304_optimize_sgd,
     "svr_lin": _305_optimize_svr_lin,
+    "lasso": _306_optimize_lasso,
 }
 
 
@@ -232,4 +274,4 @@ def _300_optimization(model, seed=CONST.SEED):
 
 
 if __name__ == '__main__':
-    param_path, trn_path, tst_path = _300_optimization('svr_lin', seed=123)
+    param_path, trn_path, tst_path = _300_optimization('lasso')

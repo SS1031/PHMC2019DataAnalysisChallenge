@@ -13,7 +13,8 @@
       "lin",
       "svr_lin",
       "lgb",
-      "knn"
+      "knn",
+      "lasso"
     ]
   }
 }

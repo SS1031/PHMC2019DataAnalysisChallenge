@@ -39,7 +39,7 @@ def _502_weighted_average(seed=CONST.SEED):
     preds = pd.DataFrame()
     models = utils.get_config()['_500_ensemble']['models']
     for model in models:
-        _pred, _score = _501_seed_average(model, loops=1)
+        _pred, _score = _501_seed_average(model, loops=10, seed=seed)
         scores.append(_score)
         preds = pd.concat([preds, _pred], axis=1)
 
@@ -54,7 +54,3 @@ def _502_weighted_average(seed=CONST.SEED):
 
 if __name__ == '__main__':
     scores, preds, sbmt = _502_weighted_average()
-    from _300_optimization import _300_optimization
-
-    params_path, trn_path, tst_path = _300_optimization('lin', seed=CONST.SEED)
-    tst = pd.read_feather(tst_path)

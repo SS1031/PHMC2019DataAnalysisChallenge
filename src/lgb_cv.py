@@ -15,7 +15,7 @@ import CONST
 import utils
 
 
-def lgb_cv_id_fold(trn, params, tst=None, seed=CONST.SEED, imp_plot=False):
+def lgb_cv_id_fold(trn, params, tst=None, model_seed=CONST.SEED, imp_plot=False):
     """
     tstが入っていたらpredictionとimportanceを返却する
     事前に作成したcv_idでcvを切っていく
@@ -24,7 +24,7 @@ def lgb_cv_id_fold(trn, params, tst=None, seed=CONST.SEED, imp_plot=False):
         preds = tst[['Engine']].copy()
         feature_importance_df = pd.DataFrame()
 
-    cv_id = utils.get_cv_id(seed)
+    cv_id = utils.get_cv_id(model_seed)
     trn = trn.merge(cv_id, on=['Engine'], how='left')
     assert trn.cv_id.notnull().all()
 

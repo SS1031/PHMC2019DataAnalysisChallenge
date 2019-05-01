@@ -9,11 +9,11 @@ import CONST
 import utils
 
 
-def sgd_cv_id_fold(trn, params={}, tst=None, seed=CONST.SEED, imp_plot=False):
+def sgd_cv_id_fold(trn, params={}, tst=None, model_seed=CONST.SEED):
     if tst is not None:
         preds = tst[['Engine']].copy()
 
-    cv_id = utils.get_cv_id(seed)
+    cv_id = utils.get_cv_id(model_seed)
 
     trn = trn.merge(cv_id, on=['Engine'], how='left')
     assert trn.cv_id.notnull().all()

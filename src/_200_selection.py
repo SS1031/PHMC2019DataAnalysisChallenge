@@ -16,13 +16,11 @@ warnings.filterwarnings('ignore')
 
 
 def _201_lasso_selection(in_trn_path, in_tst_path, seed=CONST.SEED, alpha=0.01,
-                         out_trn_path=os.path.join(CONST.PIPE200, '_201_trn_seed{}_{}_{}.f'),
-                         out_tst_path=os.path.join(CONST.PIPE200, '_201_tst_seed{}_{}_{}.f')):
-    # in_trn_path, in_tst_path = _111_offset_feature()
+                         out_trn_path=os.path.join(CONST.PIPE200, '_201_trn_seed{}_{}.f'),
+                         out_tst_path=os.path.join(CONST.PIPE200, '_201_tst_seed{}_{}.f')):
     _hash = hashlib.md5((in_trn_path + in_tst_path).encode('utf-8')).hexdigest()[:3]
-
-    out_trn_path = out_trn_path.format(seed, get_config_name(), _hash)
-    out_tst_path = out_tst_path.format(seed, get_config_name(), _hash)
+    out_trn_path = out_trn_path.format(seed, _hash)
+    out_tst_path = out_tst_path.format(seed, _hash)
 
     if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
         print("Cache file exist")

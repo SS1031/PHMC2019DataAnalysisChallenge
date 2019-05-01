@@ -10,6 +10,7 @@ from knn_cv import knn_cv_id_fold
 from lin_cv import lin_cv_id_fold
 from sgd_cv import sgd_cv_id_fold
 from svr_lin_cv import svr_lin_cv_id_fold
+from lasso_cv import lasso_cv_id_fold
 from utils import get_config
 from _300_optimization import _300_optimization
 
@@ -19,11 +20,12 @@ predict_func_mapper = {
     'lin': lin_cv_id_fold,
     'sgd': sgd_cv_id_fold,
     'svr_lin': svr_lin_cv_id_fold,
+    'lasso': lasso_cv_id_fold,
 }
 
 
-def _400_prediction(model, seed=CONST.SEED):
-    params_path, trn_path, tst_path = _300_optimization(model)
+def _400_prediction(model, model_seed=CONST.SEED, co_seed=CONST.SEED):
+    params_path, trn_path, tst_path = _300_optimization(model, co_seed)
 
     with open(params_path, 'r') as fp:
         params = json.load(fp)
@@ -31,7 +33,7 @@ def _400_prediction(model, seed=CONST.SEED):
     trn = pd.read_feather(trn_path)
     tst = pd.read_feather(tst_path)
 
-    score, preds = predict_func_mapper[model](trn, params=params, tst=tst, seed=seed)
+    score, preds = predict_func_mapper[model](trn, params=params, tst=tst, model_seed=model_seed)
 
     return score, preds
 
