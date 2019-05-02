@@ -14,9 +14,9 @@ def _501_seed_average(model, loops=10, seed=CONST.SEED):
     sbmts = pd.DataFrame()
 
     for i in range(1, loops + 1):
-        seed = seed * i
-        print(f"Loop : {i}, Seed : {seed}")
-        score, preds = _400_prediction(model, seed)
+        model_seed = seed * i
+        print(f"Loop : {i}, Model Seed : {model_seed}, Cutoff Seed {seed}")
+        score, preds = _400_prediction(model, model_seed=model_seed, co_seed=seed)
         print("CV Score :", score)
         scores.append(score)
         _sbmt = preds.mean(axis=1).to_frame(f'sbmt{i}')

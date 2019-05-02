@@ -1,0 +1,20 @@
+{
+  "debug": false,
+  "seed": 42,
+  "nfold": 8,
+  "_000_preprocess": "drop_useless",
+  "_100_feature": {
+    "set": "comprehensive",
+    "func": "offset"
+  },
+  "model": "lin",
+  "_500_ensemble": {
+    "models": [
+      "lin",
+      "svr_lin",
+      "lgb",
+      "knn",
+      "lasso"
+    ]
+  }
+}
