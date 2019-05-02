@@ -42,7 +42,7 @@ def new_labels(data, seed):
     for engine, engine_no_df in gb:
         instances = engine_no_df.shape[0]
         random.seed(seed + int(regex.sub('', engine)))
-        r = random.randint(40, instances - 5)
+        r = random.randint(20, instances - 5)
         ct_ids.append(engine_no_df.iloc[r, :]['Engine'])
         ct_flights.append(engine_no_df.iloc[r, :]['FlightNo'])
         ct_labels.append(engine_no_df.iloc[r, :]['RUL'])
@@ -129,12 +129,15 @@ def tsfresh_extract_cutoff_regime_feature(data, seed, istest=False):
         print("Train feature processing...")
         ct = make_cutoff_flights(data.copy(), seed)
         data = make_cutoff_data(ct, data)
-    print(data.groupby('Engine').size())
 
     feat_cols = [f for f in data.columns if f not in ['FlightRegime']]
     for r in [1, 2, 3, 4, 5, 6]:
         print(f"Regime {r}")
-        _feat = _extract_features(data[data.FlightRegime == r][feat_cols].reset_index(drop=True), {})
+        tmp = data[data.FlightRegime == r][feat_cols].reset_index(drop=True).copy()
+        tmp_gb = tmp.groupby('Engine')
+        remove_engines = tmp_gb.size()[tmp_gb.size() <= 1].index.values
+        print(remove_engines)
+        _feat = _extract_features(tmp[~tmp.Engine.isin(remove_engines)], {})
         _feat = impute(_feat)
         if not istest:
             _feat.index.name = 'Engine'
