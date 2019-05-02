@@ -55,10 +55,6 @@ def _401_seed_average(loops=10):
         sbmts = pd.concat([sbmts, _sbmt], axis=1)
 
     utils.update_result(func_name, np.mean(scores), np.std(scores), output_path)
-    sbmt = sbmts.mean(axis=1).to_frame('Predicted RUL').reset_index()
-    # Post-Processing...
-    sbmt.loc[sbmt['Predicted RUL'] < 0, 'Predicted RUL'] = 0
-    sbmt[['Predicted RUL']].to_csv(output_path, index=False)
 
     return sbmts
 
