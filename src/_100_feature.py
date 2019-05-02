@@ -42,7 +42,7 @@ def new_labels(data, seed):
     for engine, engine_no_df in gb:
         instances = engine_no_df.shape[0]
         random.seed(seed + int(regex.sub('', engine)))
-        r = random.randint(15, instances - 5)
+        r = random.randint(40, instances - 5)
         ct_ids.append(engine_no_df.iloc[r, :]['Engine'])
         ct_flights.append(engine_no_df.iloc[r, :]['FlightNo'])
         ct_labels.append(engine_no_df.iloc[r, :]['RUL'])
@@ -87,12 +87,10 @@ def _extract_features(df, kind_to_fc_parameters={}):
     if bool(kind_to_fc_parameters):
         _feature = extract_features(df, column_id="Engine", column_sort="FlightNo",
                                     default_fc_parameters={},
-                                    kind_to_fc_parameters=kind_to_fc_parameters,
-                                    impute_function=impute)
+                                    kind_to_fc_parameters=kind_to_fc_parameters)
     else:
         _feature = extract_features(df, column_id="Engine", column_sort="FlightNo",
-                                    default_fc_parameters=fc_parameter,
-                                    impute_function=impute)
+                                    default_fc_parameters=fc_parameter)
     return _feature
 
 
@@ -114,6 +112,7 @@ def tsfresh_extract_cutoff_feature(data, seed, istest=False, feature_setting={})
         print("Extracted Feature Shape =", feat.shape)
         print("First Step Selection...")
         _feat = select_features(feat[feat_cols], feat['RUL'], ml_task='regression')
+        _feat = impute(_feat)
         print("Selected Feature Shape =", _feat.shape)
         feat = pd.concat([_feat, feat['RUL']], axis=1)
 
@@ -136,6 +135,7 @@ def tsfresh_extract_cutoff_regime_feature(data, seed, istest=False):
     for r in [1, 2, 3, 4, 5, 6]:
         print(f"Regime {r}")
         _feat = _extract_features(data[data.FlightRegime == r][feat_cols].reset_index(drop=True), {})
+        _feat = impute(_feat)
         if not istest:
             _feat.index.name = 'Engine'
             _feat.reset_index(inplace=True)
