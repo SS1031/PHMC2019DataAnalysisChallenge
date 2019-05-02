@@ -102,6 +102,7 @@ def tsfresh_extract_cutoff_feature(data, seed, istest=False, feature_setting={})
         data = make_cutoff_data(ct, data)
 
     feat = _extract_features(data, feature_setting)
+    feat = impute(feat)
     feat.index.name = 'Engine'
     feat.reset_index(inplace=True)
     feat = feat.merge(ct, on='Engine', how='left')
@@ -112,7 +113,6 @@ def tsfresh_extract_cutoff_feature(data, seed, istest=False, feature_setting={})
         print("Extracted Feature Shape =", feat.shape)
         print("First Step Selection...")
         _feat = select_features(feat[feat_cols], feat['RUL'], ml_task='regression')
-        _feat = impute(_feat)
         print("Selected Feature Shape =", _feat.shape)
         feat = pd.concat([_feat, feat['RUL']], axis=1)
 
@@ -136,7 +136,7 @@ def tsfresh_extract_cutoff_regime_feature(data, seed, istest=False):
         tmp = data[data.FlightRegime == r][feat_cols].reset_index(drop=True).copy()
         tmp_gb = tmp.groupby('Engine')
         remove_engines = tmp_gb.size()[tmp_gb.size() <= 1].index.values
-        print(remove_engines)
+        print("Remove Engines", remove_engines)
         _feat = _extract_features(tmp[~tmp.Engine.isin(remove_engines)], {})
         _feat = impute(_feat)
         if not istest:
@@ -151,6 +151,7 @@ def tsfresh_extract_cutoff_regime_feature(data, seed, istest=False):
             print("Selected Feature Shape =", _feat.shape)
         _feat.columns = [c + f'_Regime{r}' for c in _feat.columns]
         feat = pd.concat([feat, _feat], axis=1, sort=True)
+        feat = impute(feat)
 
     feat.index.name = 'Engine'
     feat.reset_index(inplace=True)
