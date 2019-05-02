@@ -162,9 +162,9 @@ def tsfresh_extract_cutoff_regime_feature(data, seed, istest=False):
 
 def _101_regime_feature(seed=CONST.SEED):
     out_trn_path = os.path.join(CONST.PIPE100,
-                                f'_110_trn_seed{seed}_{fc_parameter.__class__.__name__}.f')
+                                f'_100_trn_seed{seed}_{fc_parameter.__class__.__name__}.f')
     out_tst_path = os.path.join(CONST.PIPE100,
-                                f'_110_tst_seed{seed}_{fc_parameter.__class__.__name__}.f')
+                                f'_100_tst_seed{seed}_{fc_parameter.__class__.__name__}.f')
 
     if os.path.exists(out_trn_path) and os.path.exists(out_tst_path):
         print("Cache file exist")
