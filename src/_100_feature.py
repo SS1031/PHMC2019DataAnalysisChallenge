@@ -42,7 +42,7 @@ def new_labels(data, seed):
     for engine, engine_no_df in gb:
         instances = engine_no_df.shape[0]
         random.seed(seed + int(regex.sub('', engine)))
-        r = random.randint(5, instances - 3)
+        r = random.randint(15, instances - 5)
         ct_ids.append(engine_no_df.iloc[r, :]['Engine'])
         ct_flights.append(engine_no_df.iloc[r, :]['FlightNo'])
         ct_labels.append(engine_no_df.iloc[r, :]['RUL'])
@@ -78,7 +78,7 @@ def make_cutoff_data(ct, data):
         base_data = pd.concat([
             base_data,
             data[(data.Engine == row.Engine) & (data.FlightNo <= row.CutoffFlight)].copy()
-        ], axis=0)
+        ], axis=0).reset_index(drop=True)
 
     return base_data
 
@@ -87,10 +87,12 @@ def _extract_features(df, kind_to_fc_parameters={}):
     if bool(kind_to_fc_parameters):
         _feature = extract_features(df, column_id="Engine", column_sort="FlightNo",
                                     default_fc_parameters={},
-                                    kind_to_fc_parameters=kind_to_fc_parameters)
+                                    kind_to_fc_parameters=kind_to_fc_parameters,
+                                    impute_function=impute)
     else:
         _feature = extract_features(df, column_id="Engine", column_sort="FlightNo",
-                                    default_fc_parameters=fc_parameter)
+                                    default_fc_parameters=fc_parameter,
+                                    impute_function=impute)
     return _feature
 
 
@@ -102,7 +104,6 @@ def tsfresh_extract_cutoff_feature(data, seed, istest=False, feature_setting={})
         data = make_cutoff_data(ct, data)
 
     feat = _extract_features(data, feature_setting)
-    feat = impute(feat)
     feat.index.name = 'Engine'
     feat.reset_index(inplace=True)
     feat = feat.merge(ct, on='Engine', how='left')
@@ -129,12 +130,12 @@ def tsfresh_extract_cutoff_regime_feature(data, seed, istest=False):
         print("Train feature processing...")
         ct = make_cutoff_flights(data.copy(), seed)
         data = make_cutoff_data(ct, data)
+    print(data.groupby('Engine').size())
 
     feat_cols = [f for f in data.columns if f not in ['FlightRegime']]
-    for r in [1, 2, 3, 5, 6]:
+    for r in [1, 2, 3, 4, 5, 6]:
         print(f"Regime {r}")
-        _feat = _extract_features(data[data.FlightRegime == r][feat_cols], {})
-        _feat = impute(_feat)
+        _feat = _extract_features(data[data.FlightRegime == r][feat_cols].reset_index(drop=True), {})
         if not istest:
             _feat.index.name = 'Engine'
             _feat.reset_index(inplace=True)

@@ -18,7 +18,7 @@ def _600_loop(seeds=[42, 777]):
 
 if __name__ == '__main__':
     output_path = os.path.join('../data/sbmts', f'{utils.get_config_name()}.csv')
-    sbmts = _600_loop(seeds=[7, 42, 45, 777, 999])
+    sbmts = _600_loop(seeds=[21, 23, 33, 35, 42, 777, 999])
     sbmts.mean(axis=1).to_frame('Predicted RUL')
     sbmt = sbmts.mean(axis=1).to_frame('Predicted RUL').reset_index()
     # Post-Processing...
